@@ -2,8 +2,8 @@
 
 A complete, single-workspace CRM: overview dashboard, contacts, companies, a
 drag-and-drop deal board, tasks, notes and file attachments. It runs on
-Freebuff Sites with Sign in with Freebuff, D1 for data and R2 for files, and
-every record is scoped to the signed-in user.
+Freebuff Sites as one shared workspace, with D1 for data and R2 for files, and
+needs no accounts.
 
 ## Download
 
@@ -42,6 +42,14 @@ There are no accounts: Relay runs as one shared workspace per deployment. A new
 database starts empty; Settings can load sample data or clear everything.
 Because there is no sign-in, anyone who can reach a deployment can read and
 change its data — put it behind your own access control if that matters.
+
+## Getting started
+
+Start the app, and on an empty workspace the overview offers a **Get started**
+button. It loads a few sample companies, contacts, deals and tasks so you can
+try the board and dashboard right away; Settings can clear it again. The card
+only appears while the workspace is empty, so your own records never trigger
+it — add them with **New contact**, a CSV import or **New deal** instead.
 
 ## Deploy it
 
@@ -108,8 +116,8 @@ build at another deployment.
 ## Where things are
 
 - `src/worker/` is the Hono API. `db.ts` owns the schema (created on first
-  request), `seed.ts` the sample data, `auth.ts` the Freebuff integration and
-  the loopback-only development user, `routes/*` the endpoints.
+  request), `seed.ts` the sample data, `auth.ts` the shared workspace owner and
+  same-origin check, `routes/*` the endpoints.
 - `src/app/` is the React app. `components/ui.tsx` holds the primitives
   (buttons, inputs, dialogs, drawer, menus, toasts); `pages/*` the screens;
   `lib/api.ts` the data hooks (TanStack Query).
@@ -119,10 +127,12 @@ build at another deployment.
 
 ## Security notes
 
-Every `/api/*` route requires a signed-in user and scopes queries by
-`owner_sub`. Mutations must be same-origin (`isSameOriginRequest`). Files are
-addressed by database row, never by R2 key, so one user cannot read another's.
-Personalised responses are `Cache-Control: private, no-store`.
+There are no accounts: `/api/*` routes share one workspace per deployment and
+scope every query by its owner. Mutations must be same-origin
+(`isSameOrigin`), which stops other sites from writing on a visitor's behalf,
+but anyone who can reach the deployment can read and change its data — protect
+the URL itself if that matters. Responses are `Cache-Control: private,
+no-store`, and files are addressed by database row rather than R2 key.
 
 ## Contributing
 
