@@ -96,8 +96,10 @@ workspace.get('/overview', async (c) => {
     db.prepare(`SELECT stage, COUNT(*) AS n, COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? GROUP BY stage`).bind(owner),
     db
       .prepare(
-        `SELECT substr(close_date, 1, 7) AS ym, COALESCE(SUM(value),0) AS v FROM deals
-         WHERE owner_sub = ? AND stage = 'won' AND close_date >= ? GROUP BY ym ORDER BY ym`,
+        `SELECT substr(close_date, 1, 7) AS ym,
+                COALESCE(SUM(CASE WHEN stage = 'won' THEN value ELSE -value END),0) AS v
+         FROM deals
+         WHERE owner_sub = ? AND stage IN ('won','lost') AND close_date >= ? GROUP BY ym ORDER BY ym`,
       )
       .bind(owner, sixMonths.toISOString().slice(0, 10)),
     db.prepare(`${ACTIVITY_SELECT} WHERE a.owner_sub = ? ORDER BY a.created_at DESC LIMIT 8`).bind(owner),

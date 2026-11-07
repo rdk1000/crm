@@ -73,9 +73,9 @@ deals.post('/', async (c) => {
         Math.max(0, Math.round(Number(input.value) || 0)),
         stage,
         (top?.p ?? 1) - 1,
-        // Revenue is grouped by close date, so a won deal always closes today
-        // unless an earlier date was given.
-        stage === 'won' && (!input.closeDate || input.closeDate > today) ? today : input.closeDate || null,
+        // Revenue is grouped by close date, so a closed deal always closes
+        // today unless an earlier date was given.
+        (stage === 'won' || stage === 'lost') && (!input.closeDate || input.closeDate > today) ? today : input.closeDate || null,
         t,
         t,
       ),
@@ -100,9 +100,9 @@ deals.patch('/:id', async (c) => {
   const t = now()
   const today = new Date(t).toISOString().slice(0, 10)
   const requestedClose = input.closeDate === undefined ? (existing.close_date as string | null) : input.closeDate || null
-  // A won deal cannot close in the future: the six-month revenue chart would
-  // drop it, so missing or future dates become today.
-  const closeDate = stage === 'won' && (!requestedClose || requestedClose > today) ? today : requestedClose
+  // A closed deal cannot close in the future: the six-month revenue chart
+  // would drop it, so missing or future dates become today.
+  const closeDate = (stage === 'won' || stage === 'lost') && (!requestedClose || requestedClose > today) ? today : requestedClose
   const statements = [
     db
       .prepare(

@@ -14,14 +14,21 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
   const padX = 8
   const padTop = 16
   const padBottom = 28
-  const max = Math.max(1, ...data.map((d) => d.value)) * 1.15
+  const plotH = h - padTop - padBottom
+  // Net revenue can dip below zero, so the scale spans both signs and the
+  // area closes on the zero line instead of the bottom edge.
+  const rawMax = Math.max(0, ...data.map((d) => d.value))
+  const rawMin = Math.min(0, ...data.map((d) => d.value))
+  const span = Math.max(1, rawMax - rawMin)
+  const max = rawMax + span * 0.08
+  const min = rawMin - (rawMin < 0 ? span * 0.08 : 0)
+  const scale = max - min
+  const yFor = (value: number) => padTop + plotH * (1 - (value - min) / scale)
   const step = data.length > 1 ? (w - padX * 2) / (data.length - 1) : 0
-  const points = data.map((d, i) => ({
-    x: padX + i * step,
-    y: padTop + (h - padTop - padBottom) * (1 - d.value / max),
-  }))
+  const points = data.map((d, i) => ({ x: padX + i * step, y: yFor(d.value) }))
+  const zeroY = yFor(0)
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
-  const area = `${line} L${points[points.length - 1]?.x ?? 0},${h - padBottom} L${padX},${h - padBottom} Z`
+  const area = `${line} L${points[points.length - 1]?.x ?? 0},${zeroY} L${padX},${zeroY} Z`
   const ticks = [0.25, 0.5, 0.75, 1]
   return (
     <div className={cx('relative', className)}>
@@ -43,6 +50,7 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
             strokeDasharray="2 4"
           />
         ))}
+        <line x1={padX} x2={w - padX} y1={zeroY} y2={zeroY} stroke="var(--color-line-strong)" />
         <motion.path d={area} fill={`url(#${gradientId})`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 }} />
         <motion.path
           d={line}

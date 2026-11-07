@@ -62,7 +62,7 @@ is connected, and file uploads are hidden until R2 is attached.
 
 ## What is inside
 
-- **Overview** — pipeline and revenue KPIs, a six-month won-revenue chart, stage
+- **Overview** — pipeline and revenue KPIs, a six-month net-revenue chart (won minus lost), stage
   totals, recent activity and the next few follow-ups.
 - **Contacts** — searchable, filterable, paginated people with status, photo,
   company, notes, deals and files. Contacts link both ways into companies.
