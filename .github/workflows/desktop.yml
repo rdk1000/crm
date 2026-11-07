@@ -18,13 +18,13 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-latest
-            command: npx electron-builder --linux AppImage deb --x64
+            command: npx electron-builder --linux AppImage deb --x64 --publish never
           - name: macOS
             os: macos-latest
-            command: npx electron-builder --mac dmg --x64 --arm64
+            command: npx electron-builder --mac dmg zip --x64 --arm64 --publish never
           - name: Windows
             os: windows-latest
-            command: npx electron-builder --win nsis --x64
+            command: npx electron-builder --win nsis --x64 --publish never
     defaults:
       run:
         working-directory: desktop
@@ -45,9 +45,12 @@ jobs:
           if-no-files-found: error
           path: |
             desktop/release/*.dmg
+            desktop/release/*.zip
             desktop/release/*.exe
             desktop/release/*.AppImage
             desktop/release/*.deb
+            desktop/release/latest*.yml
+            desktop/release/*.blockmap
 
   release:
     name: Publish release

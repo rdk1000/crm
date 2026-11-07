@@ -1,9 +1,11 @@
-const { app, BrowserWindow, shell } = require('electron')
+const { app, BrowserWindow, dialog, shell } = require('electron')
+const { autoUpdater } = require('electron-updater')
 
 // The desktop shell is a thin wrapper: the workspace, database and sign-in all
 // live on the deployed app, so the window just loads that origin. Point a local
 // build somewhere else with RELAY_APP_URL.
 const DEFAULT_APP_URL = 'https://site-dbf0843ca8604a209e1ff80638c87f51.freebuff.page'
+const UPDATE_CHECK_INTERVAL = 6 * 60 * 60 * 1000
 
 function appUrl() {
   try {
@@ -65,6 +67,42 @@ function createWindow() {
   return window
 }
 
+function setupAutoUpdate() {
+  // electron-updater reads app-update.yml, which only exists in packaged builds.
+  if (!app.isPackaged) return
+
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('error', (error) => {
+    // Unsigned macOS builds cannot self-update; never let that break the app.
+    console.error('[relay] update check failed:', error?.message ?? error)
+  })
+
+  autoUpdater.on('update-downloaded', async (info) => {
+    const [window] = BrowserWindow.getAllWindows()
+    const options = {
+      type: 'info',
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'Update ready',
+      message: `Relay ${info.version} is ready to install.`,
+      detail: 'Restart to finish the update. Your workspace lives on the server, so nothing is lost.',
+    }
+    const { response } = window ? await dialog.showMessageBox(window, options) : await dialog.showMessageBox(options)
+    if (response === 0) autoUpdater.quitAndInstall()
+  })
+
+  const check = () => {
+    autoUpdater.checkForUpdates().catch((error) => console.error('[relay] update check failed:', error?.message ?? error))
+  }
+
+  // Give the window time to load, then keep checking while the app stays open.
+  setTimeout(check, 10_000).unref()
+  setInterval(check, UPDATE_CHECK_INTERVAL).unref()
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
@@ -78,6 +116,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     app.setAppUserModelId('com.relay.crm')
     createWindow()
+    setupAutoUpdate()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })

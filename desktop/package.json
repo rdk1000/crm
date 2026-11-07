@@ -1,7 +1,7 @@
 {
   "name": "relay-desktop",
   "productName": "Relay",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Desktop shell for the Relay CRM",
   "homepage": "https://github.com/rubende2013/crm",
   "license": "MIT",
@@ -11,8 +11,11 @@
   "scripts": {
     "start": "electron .",
     "dist:linux": "electron-builder --linux AppImage deb --x64",
-    "dist:mac": "electron-builder --mac dmg --x64 --arm64",
+    "dist:mac": "electron-builder --mac dmg zip --x64 --arm64",
     "dist:win": "electron-builder --win nsis --x64"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -26,10 +29,21 @@
       "buildResources": "build"
     },
     "files": ["main.js", "package.json"],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "rubende2013",
+        "repo": "crm",
+        "releaseType": "release"
+      }
+    ],
     "mac": {
       "category": "public.app-category.business",
       "icon": "build/icon.icns",
-      "target": [{ "target": "dmg", "arch": ["x64", "arm64"] }],
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] },
+        { "target": "zip", "arch": ["x64", "arm64"] }
+      ],
       "artifactName": "Relay-macOS-${arch}.${ext}"
     },
     "win": {

@@ -62,6 +62,16 @@ Download the latest from <https://github.com/rubende2013/crm/releases/latest>,
 or use the Desktop app section in Settings. The builds are unsigned, so macOS
 needs right-click → Open the first time and Windows shows a SmartScreen prompt.
 
+### Updates
+
+Packaged builds check the GitHub release feed on launch and every six hours,
+download a newer version in the background and ask to restart when it is ready.
+The release also ships the `latest*.yml` metadata the updater reads, plus a
+`.zip` next to each macOS `.dmg`. Windows and the Linux AppImage update in place;
+the `.deb` is updated through the package manager instead. macOS needs a signed
+and notarised build for Squirrel to accept an update — unsigned builds log the
+failure and keep running, and users install the new `.dmg` by hand.
+
 Build locally (only the current platform can be produced):
 
 ```sh
