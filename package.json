@@ -1,7 +1,7 @@
 {
   "name": "relay",
   "description": "Relay \u2014 a single-workspace CRM on Cloudflare Workers with React, Hono, D1 and R2.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "private": false,
   "type": "module",

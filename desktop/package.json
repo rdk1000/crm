@@ -1,7 +1,7 @@
 {
   "name": "relay-desktop",
   "productName": "Relay",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Desktop shell for the Relay CRM",
   "homepage": "https://github.com/rubende2013/crm",
   "license": "MIT",

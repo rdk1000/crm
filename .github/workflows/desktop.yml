@@ -18,12 +18,15 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-latest
+            slug: linux
             command: npx electron-builder --linux AppImage deb --x64 --publish never
           - name: macOS
             os: macos-latest
+            slug: mac
             command: npx electron-builder --mac dmg zip --x64 --arm64 --publish never
           - name: Windows
             os: windows-latest
+            slug: win
             command: npx electron-builder --win nsis --x64 --publish never
     defaults:
       run:
@@ -39,6 +42,8 @@ jobs:
         run: ${{ matrix.command }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Checksums
+        run: node scripts/checksums.mjs release ${{ matrix.slug }}
       - uses: actions/upload-artifact@v4
         with:
           name: relay-${{ matrix.name }}
@@ -51,6 +56,7 @@ jobs:
             desktop/release/*.deb
             desktop/release/latest*.yml
             desktop/release/*.blockmap
+            desktop/release/SHA256SUMS-*.txt
 
   release:
     name: Publish release
@@ -62,6 +68,12 @@ jobs:
         with:
           path: assets
           merge-multiple: true
+      - name: Combine checksums
+        run: |
+          cd assets
+          cat SHA256SUMS-*.txt | sort -k2 > SHA256SUMS.txt
+          rm -f SHA256SUMS-*.txt
+          cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
           files: assets/*

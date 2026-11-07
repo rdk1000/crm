@@ -17,6 +17,14 @@ Ready-to-install desktop builds, straight from the latest release:
 | Linux (AppImage) | [Relay-Linux-x86_64.AppImage](https://github.com/rubende2013/crm/releases/latest/download/Relay-Linux-x86_64.AppImage) |
 | Linux (Debian/Ubuntu) | [Relay-Linux-amd64.deb](https://github.com/rubende2013/crm/releases/latest/download/Relay-Linux-amd64.deb) |
 
+Every installer is listed with its SHA-256 digest in
+[SHA256SUMS.txt](https://github.com/rubende2013/crm/releases/latest/download/SHA256SUMS.txt).
+After downloading, verify the files you got:
+
+```sh
+sha256sum -c SHA256SUMS.txt     # macOS: shasum -a 256 -c SHA256SUMS.txt
+```
+
 The builds are unsigned (macOS: right-click → Open the first time, Windows:
 SmartScreen confirmation) and update themselves after the first install. The
 download code lives in [Settings](src/app/pages/Settings.tsx),
