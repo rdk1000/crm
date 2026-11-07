@@ -337,7 +337,9 @@ export function DealForm({
   const [form, setForm] = useState(blankDeal(initial, defaults))
   useEffect(() => {
     if (open) setForm(blankDeal(initial, defaults))
-  }, [open, initial, defaults])
+    // Reset only when the dialog opens or switches deals. A background refetch
+    // must not wipe a date the user is still picking.
+  }, [open, initial?.id, defaults?.stage, defaults?.contactId, defaults?.companyId])
   const save = useApiMutation(
     (input: typeof form) => {
       const payload = { ...input, value: Number(input.value) || 0 }
@@ -454,7 +456,9 @@ export function TaskForm({
   const [form, setForm] = useState(blankTask(initial, defaults))
   useEffect(() => {
     if (open) setForm(blankTask(initial, defaults))
-  }, [open, initial, defaults])
+    // Reset only when the dialog opens or switches tasks, not on a refetch
+    // while the due date is being edited.
+  }, [open, initial?.id, defaults?.contactId, defaults?.dealId])
   const save = useApiMutation(
     (input: typeof form) => {
       const payload = { title: input.title, dueAt: fromDateInput(input.due), contactId: input.contactId || null, dealId: input.dealId || null }
