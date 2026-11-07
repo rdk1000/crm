@@ -7,3 +7,4 @@ desktop/release
 !.dev.vars.example
 .DS_Store
 *.log
+/freebuff-sites-build/
