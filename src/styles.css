@@ -23,6 +23,8 @@
   --color-warning-soft: #fdf1df;
   --color-danger: #d4462f;
   --color-danger-soft: #fdebe8;
+  --color-danger-solid: #cf422c;
+  --color-danger-solid-hover: #b83a25;
   --color-info: #2f77d1;
   --color-info-soft: #e8f1fd;
 
@@ -54,7 +56,7 @@ html.dark {
   --color-line-strong: #373742;
   --color-fg: #f1f1f5;
   --color-muted: #a2a2ae;
-  --color-faint: #787883;
+  --color-faint: #8a8a96;
   --color-accent: #9691ff;
   --color-accent-soft: #201f3c;
   --color-success: #46c28d;
@@ -63,6 +65,8 @@ html.dark {
   --color-warning-soft: #2a2113;
   --color-danger: #ef6a52;
   --color-danger-soft: #2e1714;
+  --color-danger-solid: #b83a25;
+  --color-danger-solid-hover: #a33320;
   --color-info: #6ba8ef;
   --color-info-soft: #142335;
   --color-solid: #f1f1f5;

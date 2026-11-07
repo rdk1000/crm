@@ -27,7 +27,7 @@ const buttonVariants: Record<ButtonVariant, string> = {
   primary: 'bg-solid text-solid-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] hover:bg-solid-hover',
   secondary: 'border border-line-strong bg-surface text-fg shadow-[0_1px_1px_rgb(20_20_24/0.04)] hover:bg-surface-2',
   ghost: 'text-muted hover:bg-surface-2 hover:text-fg',
-  danger: 'bg-danger text-white hover:bg-[#bf3b26]',
+  danger: 'bg-danger-solid text-white hover:bg-danger-solid-hover',
 }
 const buttonSizes: Record<ButtonSize, string> = {
   md: 'h-9 px-3.5 text-[13.5px]',
@@ -158,7 +158,7 @@ export function CompanyMark({ name, hue, size = 32, className }: { name: string;
         height: size,
         fontSize: Math.max(10, Math.round(size * 0.4)),
         background: `hsl(${hue} 55% 94%)`,
-        color: `hsl(${hue} 50% 38%)`,
+        color: `hsl(${hue} 50% 28%)`,
         borderRadius: Math.round(size * 0.32),
       }}
       aria-hidden
@@ -470,7 +470,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               className={cx(
                 'pointer-events-auto rounded-control px-4 py-2.5 text-[13.5px] font-medium shadow-pop',
-                t.tone === 'danger' ? 'bg-danger text-white' : 'bg-solid text-solid-fg',
+                t.tone === 'danger' ? 'bg-danger-solid text-white' : 'bg-solid text-solid-fg',
               )}
             >
               {t.message}
