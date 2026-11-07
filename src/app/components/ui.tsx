@@ -24,7 +24,7 @@ type ButtonSize = 'md' | 'sm' | 'icon' | 'icon-sm'
 const buttonBase =
   'inline-flex shrink-0 select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-control font-medium transition-[background-color,color,box-shadow,transform] duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0'
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: 'bg-fg text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] hover:bg-[#26262c]',
+  primary: 'bg-solid text-solid-fg shadow-[inset_0_1px_0_rgb(255_255_255/0.12)] hover:bg-solid-hover',
   secondary: 'border border-line-strong bg-surface text-fg shadow-[0_1px_1px_rgb(20_20_24/0.04)] hover:bg-surface-2',
   ghost: 'text-muted hover:bg-surface-2 hover:text-fg',
   danger: 'bg-danger text-white hover:bg-[#bf3b26]',
@@ -78,10 +78,10 @@ export function Checkbox({ className, ...rest }: ComponentPropsWithoutRef<'input
     <span className={cx('relative inline-grid size-4.5 shrink-0 place-items-center', className)}>
       <input
         type="checkbox"
-        className="peer absolute inset-0 size-full cursor-pointer appearance-none rounded-[6px] border border-line-strong bg-surface transition-colors checked:border-fg checked:bg-fg disabled:cursor-default"
+        className="peer absolute inset-0 size-full cursor-pointer appearance-none rounded-[6px] border border-line-strong bg-surface transition-colors checked:border-solid checked:bg-solid disabled:cursor-default"
         {...rest}
       />
-      <svg viewBox="0 0 16 16" className="pointer-events-none relative size-3 opacity-0 transition-opacity peer-checked:opacity-100" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg viewBox="0 0 16 16" className="pointer-events-none relative size-3 text-solid-fg opacity-0 transition-opacity peer-checked:opacity-100" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M3.5 8.5l2.8 2.8L12.5 5" />
       </svg>
     </span>
@@ -252,7 +252,7 @@ export function Dialog({
       {open && (
         <motion.div
           key="overlay"
-          className="fixed inset-0 z-50 flex items-end justify-center bg-fg/30 p-4 backdrop-blur-[2px] sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 backdrop-blur-[2px] sm:items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -310,7 +310,7 @@ export function Drawer({
       {open && (
         <motion.div
           key="overlay"
-          className="fixed inset-0 z-50 bg-fg/20"
+          className="fixed inset-0 z-50 bg-black/40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -470,7 +470,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               exit={{ opacity: 0, y: 8, scale: 0.96 }}
               className={cx(
                 'pointer-events-auto rounded-control px-4 py-2.5 text-[13.5px] font-medium shadow-pop',
-                t.tone === 'danger' ? 'bg-danger text-white' : 'bg-fg text-white',
+                t.tone === 'danger' ? 'bg-danger text-white' : 'bg-solid text-solid-fg',
               )}
             >
               {t.message}

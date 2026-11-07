@@ -11,7 +11,7 @@ export function SignIn() {
     <div className="grid h-full lg:grid-cols-2">
       <div className="flex flex-col justify-between p-8 sm:p-12">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-8 place-items-center rounded-[10px] bg-fg text-white">
+          <span className="grid size-8 place-items-center rounded-[10px] bg-solid text-solid-fg">
             <Logo className="size-4.5" />
           </span>
           <span className="text-[15px] font-semibold tracking-tight">Relay</span>
@@ -22,9 +22,9 @@ export function SignIn() {
           <p className="mt-3 text-[15px] leading-relaxed text-muted">Contacts, companies, deals and the notes that connect them. Sign in to open your workspace.</p>
           <a
             href={`/auth/freebuff/signin?returnTo=${returnTo}`}
-            className="mt-8 inline-flex h-11 items-center gap-2 rounded-control bg-fg px-5 text-[14px] font-medium text-white transition-colors hover:bg-[#26262c]"
+            className="mt-8 inline-flex h-11 items-center gap-2 rounded-control bg-solid px-5 text-[14px] font-medium text-solid-fg transition-colors hover:bg-solid-hover"
           >
-            <span className="grid size-5 place-items-center rounded-[6px] bg-white text-[11px] font-bold text-fg">F</span>
+            <span className="grid size-5 place-items-center rounded-[6px] bg-white text-[11px] font-bold text-[#141418]">F</span>
             Sign in with Freebuff
             <ArrowRight className="size-4" />
           </a>

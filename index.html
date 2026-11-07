@@ -3,8 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f6f6f7" />
+    <script>
+      // Apply the saved theme before first paint so dark mode never flashes.
+      try {
+        var stored = localStorage.getItem('relay-theme') || 'system'
+        var dark = stored === 'dark' || (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.classList.toggle('dark', dark)
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+      } catch (error) {}
+    </script>
     <meta name="description" content="Relay — contacts, companies, deals and follow-ups in one quiet workspace." />
     <title>Relay — CRM</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

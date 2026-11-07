@@ -26,6 +26,12 @@
   --color-info: #2f77d1;
   --color-info-soft: #e8f1fd;
 
+  /* "Solid" is the high-contrast fill used by primary buttons, the logo mark
+     and toasts. In dark it flips to a light surface with dark text. */
+  --color-solid: #141418;
+  --color-solid-fg: #ffffff;
+  --color-solid-hover: #26262c;
+
   --radius-control: 12px;
   --radius-card: 18px;
   --radius-dialog: 22px;
@@ -34,6 +40,37 @@
   --shadow-card: 0 1px 2px rgb(20 20 24 / 0.04), 0 0 0 1px rgb(20 20 24 / 0.04);
   --shadow-pop: 0 0 0 1px rgb(20 20 24 / 0.06), 0 12px 40px -12px rgb(20 20 24 / 0.25);
   --shadow-dialog: 0 0 0 1px rgb(20 20 24 / 0.06), 0 30px 80px -20px rgb(20 20 24 / 0.35);
+}
+
+/* Dark mode swaps the same token names on <html>, so every utility reading
+   var(--color-*) follows without per-component overrides. */
+html.dark {
+  color-scheme: dark;
+  --color-bg: #0b0b0e;
+  --color-surface: #151519;
+  --color-surface-2: #1c1c22;
+  --color-raised: #25252d;
+  --color-line: #26262e;
+  --color-line-strong: #373742;
+  --color-fg: #f1f1f5;
+  --color-muted: #a2a2ae;
+  --color-faint: #787883;
+  --color-accent: #9691ff;
+  --color-accent-soft: #201f3c;
+  --color-success: #46c28d;
+  --color-success-soft: #12291f;
+  --color-warning: #e2a94f;
+  --color-warning-soft: #2a2113;
+  --color-danger: #ef6a52;
+  --color-danger-soft: #2e1714;
+  --color-info: #6ba8ef;
+  --color-info-soft: #142335;
+  --color-solid: #f1f1f5;
+  --color-solid-fg: #141418;
+  --color-solid-hover: #ffffff;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.05);
+  --shadow-pop: 0 0 0 1px rgb(255 255 255 / 0.07), 0 12px 40px -12px rgb(0 0 0 / 0.7);
+  --shadow-dialog: 0 0 0 1px rgb(255 255 255 / 0.07), 0 30px 80px -20px rgb(0 0 0 / 0.8);
 }
 
 @layer base {

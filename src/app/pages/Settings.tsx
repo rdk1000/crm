@@ -1,7 +1,16 @@
-import { useState } from 'react'
+import { Monitor, Moon, Sun } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { Avatar, Badge, Button, ConfirmDialog, Field, Input, PageHeader, useToast } from '../components/ui'
 import { api, useApiMutation, useMe } from '../lib/api'
+import { cx } from '../lib/cx'
+import { applyTheme, saveTheme, storedTheme, watchSystemTheme, type Theme } from '../lib/theme'
+
+const THEME_OPTIONS = [
+  { value: 'system' as const, label: 'System', icon: Monitor },
+  { value: 'light' as const, label: 'Light', icon: Sun },
+  { value: 'dark' as const, label: 'Dark', icon: Moon },
+]
 
 const releaseUrl = (asset: string) => `https://github.com/rubende2013/crm/releases/latest/download/${asset}`
 const DESKTOP_DOWNLOADS = [
@@ -31,6 +40,17 @@ export function Settings() {
   const toast = useToast()
   const [name, setName] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<'reset' | 'clear' | null>(null)
+  const [theme, setTheme] = useState<Theme>(() => storedTheme())
+
+  useEffect(() => {
+    applyTheme(theme)
+    return theme === 'system' ? watchSystemTheme() : undefined
+  }, [theme])
+
+  const chooseTheme = (next: Theme) => {
+    setTheme(next)
+    saveTheme(next)
+  }
 
   const rename = useApiMutation((value: string) => api('/workspace', { method: 'PATCH', json: { name: value } }), ['me'], {
     onSuccess: () => toast('Workspace renamed'),
@@ -114,6 +134,28 @@ export function Settings() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-[14px] font-semibold">Appearance</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => chooseTheme(value)}
+              aria-pressed={theme === value}
+              className={cx(
+                'flex h-9 items-center gap-2 rounded-control border px-3 text-[13px] font-medium transition-colors',
+                theme === value ? 'border-line-strong bg-surface text-fg shadow-card' : 'border-line text-muted hover:bg-surface-2 hover:text-fg',
+              )}
+            >
+              <Icon className="size-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-faint">System follows the appearance your operating system uses.</p>
       </section>
 
       <section className="mt-8">

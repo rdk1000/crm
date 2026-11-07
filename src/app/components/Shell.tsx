@@ -39,7 +39,7 @@ export function Shell() {
   const sidebar = (
     <div className="flex h-full flex-col px-3 py-3">
       <div className="flex h-10 items-center gap-2.5 px-2">
-        <span className="grid size-7 shrink-0 place-items-center rounded-[9px] bg-fg text-white">
+        <span className="grid size-7 shrink-0 place-items-center rounded-[9px] bg-solid text-solid-fg">
           <Logo className="size-4" />
         </span>
         <span className="min-w-0 leading-tight">
@@ -119,7 +119,7 @@ export function Shell() {
       </div>
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setMobileOpen(false)}>
-          <div className="absolute inset-0 bg-fg/20" />
+          <div className="absolute inset-0 bg-black/40" />
           <aside className="absolute inset-y-0 left-0 w-[280px] bg-bg shadow-dialog" onClick={(e) => e.stopPropagation()}>
             <button type="button" aria-label="Close menu" onClick={() => setMobileOpen(false)} className="absolute right-3 top-3 grid size-9 place-items-center rounded-control">
               <X className="size-5" />

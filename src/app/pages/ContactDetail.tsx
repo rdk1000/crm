@@ -61,7 +61,7 @@ export function ContactDetail() {
           >
             <Avatar name={name} hue={contact.hue} src={contact.avatarKey ? `/api/files/avatar/${contact.id}?v=${avatarVersion}` : null} size={64} />
             {me?.capabilities.files && (
-              <span className="round absolute inset-0 grid place-items-center bg-fg/50 text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="round absolute inset-0 grid place-items-center bg-black/55 text-white opacity-0 transition-opacity group-hover:opacity-100">
                 {avatar.isPending ? <Spinner className="text-white" /> : <Camera className="size-5" />}
               </span>
             )}
