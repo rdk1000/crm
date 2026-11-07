@@ -3,6 +3,29 @@ import { useState } from 'react'
 import { Avatar, Badge, Button, ConfirmDialog, Field, Input, PageHeader, useToast } from '../components/ui'
 import { api, useApiMutation, useMe } from '../lib/api'
 
+const releaseUrl = (asset: string) => `https://github.com/rubende2013/crm/releases/latest/download/${asset}`
+const DESKTOP_DOWNLOADS = [
+  {
+    os: 'macOS',
+    hint: 'Disk image for Apple Silicon or Intel',
+    files: [
+      { label: 'Apple Silicon', asset: 'Relay-macOS-arm64.dmg' },
+      { label: 'Intel', asset: 'Relay-macOS-x64.dmg' },
+    ],
+  },
+  { os: 'Windows', hint: 'Installer for Windows 10 and 11', files: [{ label: 'Download .exe', asset: 'Relay-Windows-x64.exe' }] },
+  {
+    os: 'Linux',
+    hint: 'AppImage or Debian package, 64-bit',
+    files: [
+      { label: 'AppImage', asset: 'Relay-Linux-x86_64.AppImage' },
+      { label: 'Debian', asset: 'Relay-Linux-amd64.deb' },
+    ],
+  },
+]
+const downloadLink =
+  'inline-flex h-8 items-center justify-center rounded-tile border border-line-strong bg-surface px-3 text-[13px] font-medium text-fg transition-colors hover:bg-surface-2'
+
 export function Settings() {
   const { data: me } = useMe()
   const toast = useToast()
@@ -91,6 +114,36 @@ export function Settings() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-[14px] font-semibold">Desktop app</h2>
+        <p className="mt-1 text-[12.5px] text-muted">
+          Relay in its own window. The desktop shell loads this workspace, so sign-in and data stay on the server.
+        </p>
+        <div className="mt-3 divide-y divide-line rounded-card border border-line">
+          {DESKTOP_DOWNLOADS.map((row) => (
+            <div key={row.os} className="flex flex-wrap items-center gap-3 p-4">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13.5px] font-medium">{row.os}</span>
+                <span className="block text-[12.5px] text-muted">{row.hint}</span>
+              </span>
+              <span className="flex flex-wrap gap-2">
+                {row.files.map((file) => (
+                  <a key={file.asset} href={releaseUrl(file.asset)} target="_blank" rel="noreferrer" className={downloadLink}>
+                    {file.label}
+                  </a>
+                ))}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-faint">
+          Builds are unsigned: on macOS open the app once with right-click → Open, on Windows SmartScreen asks for confirmation.{' '}
+          <a href="https://github.com/rubende2013/crm/releases/latest" target="_blank" rel="noreferrer" className="underline decoration-line-strong underline-offset-2 hover:text-fg">
+            All releases
+          </a>
+        </p>
       </section>
 
       <section className="mt-8">

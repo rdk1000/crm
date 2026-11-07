@@ -45,6 +45,34 @@ is connected, and file uploads are hidden until R2 is attached.
   the person or deal they belong to.
 - **Search** — `⌘K` / `Ctrl+K` across contacts, companies and deals.
 
+## Desktop app
+
+The desktop shell in `desktop/` is a small Electron wrapper around the deployed
+app, so the database, files and sign-in stay on the server. Builds are produced
+by `.github/workflows/desktop.yml` on every `v*` tag and attached to a GitHub
+release:
+
+| Platform | File |
+| --- | --- |
+| macOS (Apple Silicon / Intel) | `Relay-macOS-arm64.dmg`, `Relay-macOS-x64.dmg` |
+| Windows 10/11 | `Relay-Windows-x64.exe` |
+| Linux (x64) | `Relay-Linux-x86_64.AppImage`, `Relay-Linux-amd64.deb` |
+
+Download the latest from <https://github.com/rubende2013/crm/releases/latest>,
+or use the Desktop app section in Settings. The builds are unsigned, so macOS
+needs right-click → Open the first time and Windows shows a SmartScreen prompt.
+
+Build locally (only the current platform can be produced):
+
+```sh
+cd desktop
+npm install
+npm run dist:linux     # or dist:mac / dist:win
+```
+
+The window loads the deployed workspace; set `RELAY_APP_URL` to point a local
+build at another deployment.
+
 ## Where things are
 
 - `src/worker/` is the Hono API. `db.ts` owns the schema (created on first
