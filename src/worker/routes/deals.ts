@@ -56,6 +56,7 @@ deals.post('/', async (c) => {
   const stage = isStage(input.stage) ? input.stage : 'lead'
   const dealId = id()
   const t = now()
+  const today = new Date(t).toISOString().slice(0, 10)
   const top = await db.prepare(`SELECT MIN(position) AS p FROM deals WHERE owner_sub = ? AND stage = ?`).bind(owner, stage).first<{ p: number | null }>()
   await db.batch([
     db
@@ -72,7 +73,9 @@ deals.post('/', async (c) => {
         Math.max(0, Math.round(Number(input.value) || 0)),
         stage,
         (top?.p ?? 1) - 1,
-        input.closeDate || null,
+        // Revenue is grouped by close date, so a won deal always closes today
+        // unless an earlier date was given.
+        stage === 'won' && (!input.closeDate || input.closeDate > today) ? today : input.closeDate || null,
         t,
         t,
       ),
@@ -95,6 +98,11 @@ deals.patch('/:id', async (c) => {
   if (!title) return c.json({ error: 'Title is required.' }, 400)
   const stage = isStage(input.stage) ? input.stage : (existing.stage as string)
   const t = now()
+  const today = new Date(t).toISOString().slice(0, 10)
+  const requestedClose = input.closeDate === undefined ? (existing.close_date as string | null) : input.closeDate || null
+  // A won deal cannot close in the future: the six-month revenue chart would
+  // drop it, so missing or future dates become today.
+  const closeDate = stage === 'won' && (!requestedClose || requestedClose > today) ? today : requestedClose
   const statements = [
     db
       .prepare(
@@ -108,7 +116,7 @@ deals.patch('/:id', async (c) => {
         input.value === undefined ? Number(existing.value) : Math.max(0, Math.round(Number(input.value) || 0)),
         stage,
         input.position === undefined ? Number(existing.position) : Number(input.position),
-        input.closeDate === undefined ? (existing.close_date as string | null) : input.closeDate || null,
+        closeDate,
         t,
         owner,
         dealId,

@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Calendar, FileText, Mail, MessageSquare, Phone, Plus, Sparkles, Users } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, Calendar, FileText, Handshake, Mail, MessageSquare, Phone, Plus, Sparkles, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -53,6 +53,8 @@ export function Overview() {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const first = me?.user.name?.split(' ')[0]
+
+  const hasRevenue = Boolean(data?.revenueSeries.some((d) => d.value > 0))
 
   const kpis = data
     ? [
@@ -117,7 +119,24 @@ export function Overview() {
             <h2 className="text-[14px] font-semibold">Revenue</h2>
             <span className="text-[12.5px] text-faint">Won deals, last 6 months</span>
           </div>
-          <div className="mt-4">{data ? <AreaChart data={data.revenueSeries} /> : <Skeleton className="h-[220px]" />}</div>
+          <div className="mt-4">
+            {data ? (
+              hasRevenue ? (
+                <AreaChart data={data.revenueSeries} />
+              ) : (
+                <div className="flex aspect-[600/220] w-full flex-col items-center justify-center gap-2 rounded-tile border border-dashed border-line px-4 text-center">
+                  <Handshake className="size-5 text-faint" />
+                  <p className="text-[13.5px] font-medium">No won deals yet</p>
+                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won show up here for the last six months.</p>
+                  <Link to="/deals" className="text-[12.5px] font-medium text-accent hover:underline">
+                    Open the deal board
+                  </Link>
+                </div>
+              )
+            ) : (
+              <Skeleton className="h-[220px]" />
+            )}
+          </div>
         </Card>
         <Card className="p-5">
           <div className="flex items-center justify-between">
