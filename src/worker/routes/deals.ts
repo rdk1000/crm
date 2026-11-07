@@ -57,6 +57,9 @@ deals.post('/', async (c) => {
   const dealId = id()
   const t = now()
   const today = new Date(t).toISOString().slice(0, 10)
+  // Keep an explicit close date, including a future one. Only a closed deal
+  // without a date gets today.
+  const closeDate = input.closeDate?.trim() || (stage === 'won' || stage === 'lost' ? today : null)
   const top = await db.prepare(`SELECT MIN(position) AS p FROM deals WHERE owner_sub = ? AND stage = ?`).bind(owner, stage).first<{ p: number | null }>()
   await db.batch([
     db
@@ -73,9 +76,7 @@ deals.post('/', async (c) => {
         Math.max(0, Math.round(Number(input.value) || 0)),
         stage,
         (top?.p ?? 1) - 1,
-        // Revenue is grouped by close date, so a closed deal always closes
-        // today unless an earlier date was given.
-        (stage === 'won' || stage === 'lost') && (!input.closeDate || input.closeDate > today) ? today : input.closeDate || null,
+        closeDate,
         t,
         t,
       ),
@@ -99,10 +100,14 @@ deals.patch('/:id', async (c) => {
   const stage = isStage(input.stage) ? input.stage : (existing.stage as string)
   const t = now()
   const today = new Date(t).toISOString().slice(0, 10)
-  const requestedClose = input.closeDate === undefined ? (existing.close_date as string | null) : input.closeDate || null
-  // A closed deal cannot close in the future: the six-month revenue chart
-  // would drop it, so missing or future dates become today.
-  const closeDate = (stage === 'won' || stage === 'lost') && (!requestedClose || requestedClose > today) ? today : requestedClose
+  const requestedClose = input.closeDate === undefined ? (existing.close_date as string | null) : input.closeDate?.trim() || null
+  const stageChanged = stage !== existing.stage
+  // Keep a date the user chose. A closed deal only falls back to today when
+  // it has no date, or when its stage changes to won/lost without a date.
+  let closeDate = requestedClose
+  if ((stage === 'won' || stage === 'lost') && ((input.closeDate === undefined && stageChanged) || !requestedClose)) {
+    closeDate = today
+  }
   const statements = [
     db
       .prepare(

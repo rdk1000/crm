@@ -83,6 +83,7 @@ workspace.get('/overview', async (c) => {
   startOfLast.setMonth(startOfLast.getMonth() - 1)
   const month = startOfMonth.toISOString().slice(0, 10)
   const lastMonth = startOfLast.toISOString().slice(0, 10)
+  const nextMonth = new Date(Date.UTC(startOfMonth.getUTCFullYear(), startOfMonth.getUTCMonth() + 1, 1)).toISOString().slice(0, 10)
   const rangeParam = c.req.query('range')
   const range = rangeParam === 'month' ? 'month' : 'year'
   const year = startOfMonth.getUTCFullYear()
@@ -113,7 +114,7 @@ workspace.get('/overview', async (c) => {
 
   const [pipeline, wonThis, wonLast, openDeals, newContacts, tasksDue, stages, revenue, revenueYears, activity, tasks] = await db.batch([
     db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage NOT IN ('won','lost')`).bind(owner),
-    db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage = 'won' AND close_date >= ?`).bind(owner, month),
+    db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage = 'won' AND close_date >= ? AND close_date < ?`).bind(owner, month, nextMonth),
     db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage = 'won' AND close_date >= ? AND close_date < ?`).bind(owner, lastMonth, month),
     db.prepare(`SELECT COUNT(*) AS n FROM deals WHERE owner_sub = ? AND stage NOT IN ('won','lost')`).bind(owner),
     db.prepare(`SELECT COUNT(*) AS n FROM contacts WHERE owner_sub = ? AND created_at >= ?`).bind(owner, t - 30 * 86_400_000),
