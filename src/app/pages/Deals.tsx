@@ -40,6 +40,10 @@ export function Deals() {
   const [view, setView] = useState<'board' | 'list'>('board')
   const [creating, setCreating] = useState<DealStage | null>(null)
   const selected = params.get('deal')
+  const [deleting, setDeleting] = useState<Deal | null>(null)
+  const remove = useApiMutation((id: string) => api(`/deals/${id}`, { method: 'DELETE' }), ['deals', 'deal', 'overview', 'contact', 'company'], {
+    onSuccess: () => setDeleting(null),
+  })
 
   const items = data?.items ?? []
   const open = items.filter((d) => !['won', 'lost'].includes(d.stage))
@@ -87,20 +91,28 @@ export function Deals() {
           ))}
         </div>
       ) : view === 'board' ? (
-        <Board deals={items} onOpen={(id) => setParams({ deal: id })} onAdd={(stage) => setCreating(stage)} />
+        <Board deals={items} onOpen={(id) => setParams({ deal: id })} onAdd={(stage) => setCreating(stage)} onDelete={setDeleting} />
       ) : (
-        <ListView deals={items} onOpen={(id) => setParams({ deal: id })} />
+        <ListView deals={items} onOpen={(id) => setParams({ deal: id })} onDelete={setDeleting} />
       )}
 
       <DealForm open={creating !== null} onClose={() => setCreating(null)} defaults={{ stage: creating ?? 'lead' }} />
       <DealDrawer id={selected} onClose={() => setParams({})} />
+      <ConfirmDialog
+        open={Boolean(deleting)}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && remove.mutate(deleting.id)}
+        loading={remove.isPending}
+        title={`Delete ${deleting?.title ?? 'this deal'}?`}
+        description="Its notes and files are removed too."
+      />
     </div>
   )
 }
 
 // Board
 
-function Board({ deals, onOpen, onAdd }: { deals: Deal[]; onOpen: (id: string) => void; onAdd: (stage: DealStage) => void }) {
+function Board({ deals, onOpen, onAdd, onDelete }: { deals: Deal[]; onOpen: (id: string) => void; onAdd: (stage: DealStage) => void; onDelete: (deal: Deal) => void }) {
   const client = useQueryClient()
   const [local, setLocal] = useState(deals)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -179,7 +191,7 @@ function Board({ deals, onOpen, onAdd }: { deals: Deal[]; onOpen: (id: string) =
       <div className="scrollbar-thin mt-6 flex-1 overflow-x-auto px-5 pb-6 sm:px-8">
         <div className="mx-auto grid h-full min-w-[1180px] max-w-[1400px] grid-cols-6 gap-3">
           {columns.map((col) => (
-            <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} />
+            <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} onDelete={onDelete} />
           ))}
         </div>
       </div>
@@ -197,7 +209,7 @@ function positionBetween(after: number | undefined, before: number | undefined):
   return (after + before) / 2
 }
 
-function Column({ stage, label, deals, onOpen, onAdd }: { stage: DealStage; label: string; deals: Deal[]; onOpen: (id: string) => void; onAdd: () => void }) {
+function Column({ stage, label, deals, onOpen, onAdd, onDelete }: { stage: DealStage; label: string; deals: Deal[]; onOpen: (id: string) => void; onAdd: () => void; onDelete: (deal: Deal) => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const total = deals.reduce((s, d) => s + d.value, 0)
   return (
@@ -214,7 +226,7 @@ function Column({ stage, label, deals, onOpen, onAdd }: { stage: DealStage; labe
       >
         <SortableContext items={deals.map((d) => d.id)} strategy={verticalListSortingStrategy}>
           {deals.map((d) => (
-            <SortableCard key={d.id} deal={d} onOpen={() => onOpen(d.id)} />
+            <SortableCard key={d.id} deal={d} onOpen={() => onOpen(d.id)} onDelete={() => onDelete(d)} />
           ))}
         </SortableContext>
         <button
@@ -230,25 +242,39 @@ function Column({ stage, label, deals, onOpen, onAdd }: { stage: DealStage; labe
   )
 }
 
-function SortableCard({ deal, onOpen }: { deal: Deal; onOpen: () => void }) {
+function SortableCard({ deal, onOpen, onDelete }: { deal: Deal; onOpen: () => void; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: deal.id })
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} {...attributes} {...listeners} className={cx(isDragging && 'opacity-30')}>
-      <DealCard deal={deal} onOpen={onOpen} />
+      <DealCard deal={deal} onOpen={onOpen} onDelete={onDelete} />
     </div>
   )
 }
 
-function DealCard({ deal, onOpen, overlay }: { deal: Deal; onOpen?: () => void; overlay?: boolean }) {
+function DealCard({ deal, onOpen, onDelete, overlay }: { deal: Deal; onOpen?: () => void; onDelete?: () => void; overlay?: boolean }) {
   return (
     <article
       onClick={onOpen}
       className={cx(
-        'cursor-grab rounded-[14px] border border-line bg-surface p-3 text-left shadow-card transition-[box-shadow,border-color] hover:border-line-strong active:cursor-grabbing',
+        'group relative cursor-grab rounded-[14px] border border-line bg-surface p-3 text-left shadow-card transition-[box-shadow,border-color] hover:border-line-strong active:cursor-grabbing',
         overlay && 'rotate-[1.5deg] cursor-grabbing shadow-pop',
       )}
     >
-      <p className="line-clamp-2 text-[13.5px] font-medium leading-snug">{deal.title}</p>
+      {onDelete && !overlay && (
+        <button
+          type="button"
+          aria-label={`Delete ${deal.title}`}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation()
+            onDelete()
+          }}
+          className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-[7px] text-faint transition-colors hover:bg-surface-2 hover:text-danger focus-visible:bg-surface-2 focus-visible:text-danger focus-visible:outline-none"
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      )}
+      <p className="line-clamp-2 pr-7 text-[13.5px] font-medium leading-snug">{deal.title}</p>
       {deal.companyName && <p className="mt-0.5 truncate text-[12.5px] text-muted">{deal.companyName}</p>}
       <div className="mt-3 flex items-center justify-between">
         <span className="text-[13px] font-semibold tabular-nums">{money(deal.value)}</span>
@@ -268,7 +294,7 @@ function DealCard({ deal, onOpen, overlay }: { deal: Deal; onOpen?: () => void; 
 
 // List
 
-function ListView({ deals, onOpen }: { deals: Deal[]; onOpen: (id: string) => void }) {
+function ListView({ deals, onOpen, onDelete }: { deals: Deal[]; onOpen: (id: string) => void; onDelete: (deal: Deal) => void }) {
   const sorted = [...deals].sort((a, b) => b.updatedAt - a.updatedAt)
   return (
     <div className="mx-auto mt-6 w-full max-w-[1400px] px-5 pb-8 sm:px-8">
@@ -276,11 +302,14 @@ function ListView({ deals, onOpen }: { deals: Deal[]; onOpen: (id: string) => vo
         <table className="w-full table-fixed text-left text-[13.5px]">
           <thead>
             <tr className="h-10 border-b border-line bg-bg/60 text-[12.5px] text-muted">
-              <th className="w-[34%] px-4 font-medium">Deal</th>
-              <th className="hidden w-[20%] px-4 font-medium md:table-cell">Company</th>
-              <th className="w-[16%] px-4 font-medium">Stage</th>
-              <th className="w-[14%] px-4 text-right font-medium">Value</th>
-              <th className="hidden w-[16%] px-4 font-medium sm:table-cell">Close</th>
+              <th className="w-[32%] px-4 font-medium">Deal</th>
+              <th className="hidden w-[18%] px-4 font-medium md:table-cell">Company</th>
+              <th className="w-[15%] px-4 font-medium">Stage</th>
+              <th className="w-[13%] px-4 text-right font-medium">Value</th>
+              <th className="hidden w-[14%] px-4 font-medium sm:table-cell">Close</th>
+              <th className="w-10 px-2">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -296,6 +325,19 @@ function ListView({ deals, onOpen }: { deals: Deal[]; onOpen: (id: string) => vo
                 </td>
                 <td className="px-4 text-right tabular-nums">{money(d.value)}</td>
                 <td className="hidden px-4 tabular-nums text-muted sm:table-cell">{d.closeDate ? shortDate(d.closeDate) : ''}</td>
+                <td className="px-2 text-right">
+                  <button
+                    type="button"
+                    aria-label={`Delete ${d.title}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onDelete(d)
+                    }}
+                    className="grid size-7 place-items-center rounded-[8px] text-faint transition-colors hover:bg-surface-2 hover:text-danger focus-visible:bg-surface-2 focus-visible:outline-none"
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
