@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { AreaChart, StageBars } from '../components/charts'
-import { Badge, Card, Checkbox, PageHeader, Skeleton } from '../components/ui'
+import { Badge, Button, Card, Checkbox, PageHeader, Skeleton, useToast } from '../components/ui'
 import { api, useApiMutation, useMe, useOverview } from '../lib/api'
 import { cx } from '../lib/cx'
 import { dueLabel, money, relativeTime } from '../lib/format'
@@ -31,7 +31,24 @@ export const activityIcon: Record<Activity['kind'], ReactNode> = {
 export function Overview() {
   const { data, isLoading } = useOverview()
   const { data: me } = useMe()
+  const toast = useToast()
   const toggle = useApiMutation((input: { id: string; done: boolean }) => api(`/tasks/${input.id}`, { method: 'PATCH', json: { done: input.done } }), ['overview', 'tasks'])
+  const seed = useApiMutation(() => api('/workspace/reset', { method: 'POST' }), ['overview', 'contacts', 'companies', 'deals', 'tasks', 'me'], {
+    onSuccess: () => toast('Sample workspace loaded'),
+  })
+
+  // An untouched deployment shows the sample-data offer instead of an empty page.
+  const isEmpty = Boolean(
+    data &&
+      data.recentActivity.length === 0 &&
+      data.upcomingTasks.length === 0 &&
+      data.kpis.pipelineValue === 0 &&
+      data.kpis.wonThisMonth === 0 &&
+      data.kpis.wonLastMonth === 0 &&
+      data.kpis.openDeals === 0 &&
+      data.kpis.newContacts === 0 &&
+      data.kpis.tasksDue === 0,
+  )
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -54,6 +71,23 @@ export function Overview() {
   return (
     <div className="mx-auto max-w-[1200px] p-5 sm:p-8">
       <PageHeader title={`${greeting}${first ? `, ${first}` : ''}`} subtitle="Here is where things stand across your pipeline." />
+
+      {isEmpty && (
+        <Card className="mt-6 flex flex-wrap items-center gap-4 p-5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-tile bg-accent-soft text-accent">
+            <Sparkles className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[14px] font-semibold">Start with a sample workspace</p>
+            <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted">
+              Load a few companies, contacts, deals and tasks to click around. You can clear it again in Settings.
+            </p>
+          </div>
+          <Button variant="primary" loading={seed.isPending} onClick={() => seed.mutate(undefined)}>
+            Get started
+          </Button>
+        </Card>
+      )}
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {isLoading
