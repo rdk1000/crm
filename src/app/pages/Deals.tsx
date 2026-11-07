@@ -13,7 +13,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useQueryClient } from '@tanstack/react-query'
-import { Calendar, Handshake, LayoutGrid, List, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Calendar, Handshake, LayoutGrid, List, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
@@ -34,6 +34,27 @@ const stageDot: Record<DealStage, string> = {
   lost: 'bg-danger',
 }
 
+const HIDDEN_STAGES_KEY = 'relay.hidden-stages'
+
+function readHiddenStages(): DealStage[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(HIDDEN_STAGES_KEY) ?? '[]')
+    return Array.isArray(parsed) ? parsed.filter((key): key is DealStage => DEAL_STAGES.some((stage) => stage.key === key)) : []
+  } catch {
+    return []
+  }
+}
+
+function persistHiddenStages(stages: DealStage[]) {
+  try {
+    if (stages.length) window.localStorage.setItem(HIDDEN_STAGES_KEY, JSON.stringify(stages))
+    else window.localStorage.removeItem(HIDDEN_STAGES_KEY)
+  } catch {
+    // Browsers can block storage; hiding still works for this visit.
+  }
+}
+
 export function Deals() {
   const { data, isLoading } = useDeals()
   const [params, setParams] = useSearchParams()
@@ -41,6 +62,20 @@ export function Deals() {
   const [creating, setCreating] = useState<DealStage | null>(null)
   const selected = params.get('deal')
   const [deleting, setDeleting] = useState<Deal | null>(null)
+  const [hiddenStages, setHiddenStages] = useState<DealStage[]>(readHiddenStages)
+  const visibleStages = DEAL_STAGES.filter((stage) => !hiddenStages.includes(stage.key))
+  const hideStage = (stage: DealStage) => {
+    setHiddenStages((prev) => {
+      if (prev.includes(stage)) return prev
+      const next = [...prev, stage]
+      persistHiddenStages(next)
+      return next
+    })
+  }
+  const showAllStages = () => {
+    setHiddenStages([])
+    persistHiddenStages([])
+  }
   const remove = useApiMutation((id: string) => api(`/deals/${id}`, { method: 'DELETE' }), ['deals', 'deal', 'overview', 'contact', 'company'], {
     onSuccess: () => setDeleting(null),
   })
@@ -75,7 +110,7 @@ export function Deals() {
                   </button>
                 ))}
               </div>
-              <Button variant="primary" onClick={() => setCreating('lead')}>
+              <Button variant="primary" onClick={() => setCreating(visibleStages[0]?.key ?? 'lead')}>
                 <Plus />
                 New deal
               </Button>
@@ -91,7 +126,15 @@ export function Deals() {
           ))}
         </div>
       ) : view === 'board' ? (
-        <Board deals={items} onOpen={(id) => setParams({ deal: id })} onAdd={(stage) => setCreating(stage)} onDelete={setDeleting} />
+        <Board
+          deals={items}
+          hiddenStages={hiddenStages}
+          onHide={hideStage}
+          onShowAll={showAllStages}
+          onOpen={(id) => setParams({ deal: id })}
+          onAdd={(stage) => setCreating(stage)}
+          onDelete={setDeleting}
+        />
       ) : (
         <ListView deals={items} onOpen={(id) => setParams({ deal: id })} onDelete={setDeleting} />
       )}
@@ -112,7 +155,23 @@ export function Deals() {
 
 // Board
 
-function Board({ deals, onOpen, onAdd, onDelete }: { deals: Deal[]; onOpen: (id: string) => void; onAdd: (stage: DealStage) => void; onDelete: (deal: Deal) => void }) {
+function Board({
+  deals,
+  hiddenStages,
+  onHide,
+  onShowAll,
+  onOpen,
+  onAdd,
+  onDelete,
+}: {
+  deals: Deal[]
+  hiddenStages: DealStage[]
+  onHide: (stage: DealStage) => void
+  onShowAll: () => void
+  onOpen: (id: string) => void
+  onAdd: (stage: DealStage) => void
+  onDelete: (deal: Deal) => void
+}) {
   const client = useQueryClient()
   const [local, setLocal] = useState(deals)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -123,11 +182,11 @@ function Board({ deals, onOpen, onAdd, onDelete }: { deals: Deal[]; onOpen: (id:
 
   const columns = useMemo(
     () =>
-      DEAL_STAGES.map((s) => ({
+      DEAL_STAGES.filter((s) => !hiddenStages.includes(s.key)).map((s) => ({
         ...s,
         deals: local.filter((d) => d.stage === s.key).sort((a, b) => a.position - b.position),
       })),
-    [local],
+    [local, hiddenStages],
   )
   const byId = useMemo(() => new Map(local.map((d) => [d.id, d])), [local])
 
@@ -188,12 +247,28 @@ function Board({ deals, onOpen, onAdd, onDelete }: { deals: Deal[]; onOpen: (id:
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => (setActiveId(null), setLocal(deals))}>
-      <div className="scrollbar-thin mt-6 flex-1 overflow-x-auto px-5 pb-6 sm:px-8">
-        <div className="mx-auto grid h-full min-w-[1180px] max-w-[1400px] grid-cols-6 gap-3">
-          {columns.map((col) => (
-            <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} onDelete={onDelete} />
-          ))}
+      {hiddenStages.length > 0 && (
+        <div className="mx-auto mt-4 flex w-full max-w-[1400px] justify-end px-5 sm:px-8">
+          <button type="button" onClick={onShowAll} className="text-[12.5px] font-medium text-accent hover:underline">
+            Show all columns ({hiddenStages.length} hidden)
+          </button>
         </div>
+      )}
+      <div className={cx('scrollbar-thin flex-1 overflow-x-auto px-5 pb-6 sm:px-8', hiddenStages.length > 0 ? 'mt-2' : 'mt-6')}>
+        {columns.length === 0 ? (
+          <div className="mx-auto flex min-w-[1180px] max-w-[1400px] flex-col items-center justify-center gap-2 rounded-card border border-dashed border-line py-20 text-center">
+            <p className="text-[13.5px] font-medium">All columns are hidden</p>
+            <button type="button" onClick={onShowAll} className="text-[12.5px] font-medium text-accent hover:underline">
+              Show all columns
+            </button>
+          </div>
+        ) : (
+          <div className="mx-auto grid h-full min-w-[1180px] max-w-[1400px] gap-3" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
+            {columns.map((col) => (
+              <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} onDelete={onDelete} onHide={() => onHide(col.key)} />
+            ))}
+          </div>
+        )}
       </div>
       <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }}>
         {active && <DealCard deal={active} overlay />}
@@ -209,16 +284,25 @@ function positionBetween(after: number | undefined, before: number | undefined):
   return (after + before) / 2
 }
 
-function Column({ stage, label, deals, onOpen, onAdd, onDelete }: { stage: DealStage; label: string; deals: Deal[]; onOpen: (id: string) => void; onAdd: () => void; onDelete: (deal: Deal) => void }) {
+function Column({ stage, label, deals, onOpen, onAdd, onDelete, onHide }: { stage: DealStage; label: string; deals: Deal[]; onOpen: (id: string) => void; onAdd: () => void; onDelete: (deal: Deal) => void; onHide: () => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const total = deals.reduce((s, d) => s + d.value, 0)
   return (
     <section className="flex min-h-0 flex-col">
-      <header className="flex h-9 items-center gap-2 px-1">
+      <header className="group flex h-9 items-center gap-2 px-1">
         <span className={cx('round size-2', stageDot[stage])} />
-        <h2 className="text-[13px] font-semibold">{label}</h2>
+        <h2 className="truncate text-[13px] font-semibold">{label}</h2>
         <span className="text-[12.5px] tabular-nums text-faint">{deals.length}</span>
         <span className="ml-auto text-[12.5px] tabular-nums text-muted">{moneyCompact(total)}</span>
+        <button
+          type="button"
+          onClick={onHide}
+          aria-label={`Hide ${label} column`}
+          title="Hide column"
+          className="grid size-6 place-items-center rounded-[7px] text-faint opacity-60 transition-colors hover:bg-surface-2 hover:text-danger focus-visible:bg-surface-2 focus-visible:text-danger focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+        >
+          <X className="size-3.5" />
+        </button>
       </header>
       <div
         ref={setNodeRef}
