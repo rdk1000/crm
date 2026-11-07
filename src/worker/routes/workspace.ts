@@ -84,34 +84,27 @@ workspace.get('/overview', async (c) => {
   const month = startOfMonth.toISOString().slice(0, 10)
   const lastMonth = startOfLast.toISOString().slice(0, 10)
   const rangeParam = c.req.query('range')
-  const range = rangeParam === 'years' || rangeParam === 'centuries' ? rangeParam : 'months'
+  const range = rangeParam === 'month' ? 'month' : 'year'
   const year = startOfMonth.getUTCFullYear()
+  const monthIndex = startOfMonth.getUTCMonth()
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const buckets: { key: string; label: string }[] = []
   let revenueStart: string
   let revenueGroup: string
-  if (range === 'years') {
-    const first = year - 5
-    revenueStart = `${first}-01-01`
-    revenueGroup = 'substr(close_date, 1, 4)'
-    for (let i = 0; i < 6; i++) buckets.push({ key: String(first + i), label: String(first + i) })
-  } else if (range === 'centuries') {
-    const current = Math.floor((year - 1) / 100) + 1
-    const first = current - 5
-    revenueStart = `${(first - 1) * 100 + 1}-01-01`
-    revenueGroup = 'CAST((CAST(substr(close_date, 1, 4) AS INTEGER) - 1) / 100 + 1 AS INTEGER)'
-    for (let i = 0; i < 6; i++) {
-      const century = first + i
-      const suffix = century % 100 >= 11 && century % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][century % 10] ?? 'th')
-      buckets.push({ key: String(century), label: `${century}${suffix}` })
+  if (range === 'month') {
+    // Every day of the current month, so the 30/31 columns are all there.
+    const days = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
+    revenueStart = new Date(Date.UTC(year, monthIndex, 1)).toISOString().slice(0, 10)
+    revenueGroup = 'close_date'
+    for (let day = 1; day <= days; day++) {
+      buckets.push({ key: new Date(Date.UTC(year, monthIndex, day)).toISOString().slice(0, 10), label: String(day) })
     }
   } else {
-    const firstMonth = startOfMonth.getUTCMonth() - 5
-    revenueStart = new Date(Date.UTC(year, firstMonth, 1)).toISOString().slice(0, 10)
+    // All twelve months of the current year, including months without deals.
+    revenueStart = `${year}-01-01`
     revenueGroup = 'substr(close_date, 1, 7)'
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(Date.UTC(year, firstMonth + i, 1))
-      buckets.push({ key: d.toISOString().slice(0, 7), label: monthNames[d.getUTCMonth()] ?? '' })
+    for (let i = 0; i < 12; i++) {
+      buckets.push({ key: `${year}-${String(i + 1).padStart(2, '0')}`, label: monthNames[i] ?? '' })
     }
   }
 

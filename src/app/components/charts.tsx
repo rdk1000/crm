@@ -27,6 +27,9 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
   const yFor = (value: number) => padTop + plotH * (1 - (value - min) / scale)
   const step = data.length > 1 ? (w - padX * 2) / (data.length - 1) : 0
   const points = data.map((d, i) => ({ x: padX + i * step, y: yFor(d.value) }))
+  // A month view has up to 31 points; label every few days instead of crowding
+  // the axis with every single day.
+  const labelEvery = data.length > 12 ? Math.ceil(data.length / 6) : 1
   const zeroY = yFor(0)
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
   const area = `${line} L${points[points.length - 1]?.x ?? 0},${zeroY} L${padX},${zeroY} Z`
@@ -82,11 +85,14 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
             )}
           </g>
         ))}
-        {data.map((d, i) => (
-          <text key={d.label} x={points[i].x} y={h - 8} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'} fontSize="12" fill="var(--color-faint)">
-            {d.label}
-          </text>
-        ))}
+        {data.map((d, i) => {
+          if (i !== 0 && i !== data.length - 1 && i % labelEvery !== 0) return null
+          return (
+            <text key={d.label} x={points[i].x} y={h - 8} textAnchor={i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'} fontSize="12" fill="var(--color-faint)">
+              {d.label}
+            </text>
+          )
+        })}
       </svg>
       {hover !== null && (
         <div

@@ -29,10 +29,10 @@ export const activityIcon: Record<Activity['kind'], ReactNode> = {
 }
 
 export function Overview() {
-  const [range, setRange] = useState<RevenueRange>('months')
+  const [range, setRange] = useState<RevenueRange>('year')
   const { data, isLoading } = useOverview(range)
   const { data: me } = useMe()
-  const rangeLabel = range === 'months' ? 'months' : range === 'years' ? 'years' : 'centuries'
+  const rangeLabel = range === 'month' ? 'this month' : 'this year'
   const toast = useToast()
   const toggle = useApiMutation((input: { id: string; done: boolean }) => api(`/tasks/${input.id}`, { method: 'PATCH', json: { done: input.done } }), ['overview', 'tasks'])
   const seed = useApiMutation(() => api('/workspace/reset', { method: 'POST' }), ['overview', 'contacts', 'companies', 'deals', 'tasks', 'me'], {
@@ -119,12 +119,11 @@ export function Overview() {
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[14px] font-semibold">Revenue</h2>
-            <div className="flex h-8 items-center rounded-control border border-line-strong bg-surface p-0.5">
+            <div className="grid h-8 grid-cols-2 items-center rounded-control border border-line-strong bg-surface p-0.5">
               {(
                 [
-                  ['months', 'Months'],
-                  ['years', 'Years'],
-                  ['centuries', 'Centuries'],
+                  ['month', 'Month'],
+                  ['year', 'Year'],
                 ] as const
               ).map(([key, label]) => (
                 <button
@@ -151,7 +150,7 @@ export function Overview() {
                 <div className="flex aspect-[600/220] w-full flex-col items-center justify-center gap-2 rounded-tile border border-dashed border-line px-4 text-center">
                   <Handshake className="size-5 text-faint" />
                   <p className="text-[13.5px] font-medium">No revenue yet</p>
-                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won or Lost show up here for the last six {rangeLabel}.</p>
+                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won or Lost show up here for {rangeLabel}.</p>
                   <Link to="/deals" className="text-[12.5px] font-medium text-accent hover:underline">
                     Open the deal board
                   </Link>
