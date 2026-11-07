@@ -1,10 +1,10 @@
 import { ArrowDownRight, ArrowUpRight, Calendar, FileText, Handshake, Mail, MessageSquare, Phone, Plus, Sparkles, Users } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { AreaChart, StageBars } from '../components/charts'
 import { Badge, Button, Card, Checkbox, PageHeader, Skeleton, useToast } from '../components/ui'
-import { api, useApiMutation, useMe, useOverview } from '../lib/api'
+import { api, useApiMutation, useMe, useOverview, type RevenueRange } from '../lib/api'
 import { cx } from '../lib/cx'
 import { dueLabel, money, relativeTime } from '../lib/format'
 import { DEAL_STAGES, type Activity } from '../../shared/types'
@@ -29,8 +29,10 @@ export const activityIcon: Record<Activity['kind'], ReactNode> = {
 }
 
 export function Overview() {
-  const { data, isLoading } = useOverview()
+  const [range, setRange] = useState<RevenueRange>('months')
+  const { data, isLoading } = useOverview(range)
   const { data: me } = useMe()
+  const rangeLabel = range === 'months' ? 'months' : range === 'years' ? 'years' : 'centuries'
   const toast = useToast()
   const toggle = useApiMutation((input: { id: string; done: boolean }) => api(`/tasks/${input.id}`, { method: 'PATCH', json: { done: input.done } }), ['overview', 'tasks'])
   const seed = useApiMutation(() => api('/workspace/reset', { method: 'POST' }), ['overview', 'contacts', 'companies', 'deals', 'tasks', 'me'], {
@@ -115,10 +117,32 @@ export function Overview() {
 
       <div className="mt-3 grid gap-3 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-[14px] font-semibold">Revenue</h2>
-            <span className="text-[12.5px] text-faint">Won minus lost, running total</span>
+            <div className="flex h-8 items-center rounded-control border border-line-strong bg-surface p-0.5">
+              {(
+                [
+                  ['months', 'Months'],
+                  ['years', 'Years'],
+                  ['centuries', 'Centuries'],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={range === key}
+                  onClick={() => setRange(key)}
+                  className={cx(
+                    'h-7 rounded-[8px] px-2 text-[11.5px] font-medium transition-colors',
+                    range === key ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
+          <p className="mt-1 text-[12.5px] text-faint">Won minus lost, running total</p>
           <div className="mt-4">
             {data ? (
               hasRevenue ? (
@@ -127,7 +151,7 @@ export function Overview() {
                 <div className="flex aspect-[600/220] w-full flex-col items-center justify-center gap-2 rounded-tile border border-dashed border-line px-4 text-center">
                   <Handshake className="size-5 text-faint" />
                   <p className="text-[13.5px] font-medium">No revenue yet</p>
-                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won or Lost show up here for the last six months.</p>
+                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won or Lost show up here for the last six {rangeLabel}.</p>
                   <Link to="/deals" className="text-[12.5px] font-medium text-accent hover:underline">
                     Open the deal board
                   </Link>

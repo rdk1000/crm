@@ -43,7 +43,9 @@ export async function api<T>(path: string, init?: RequestInit & { json?: unknown
 // Queries
 
 export const useMe = () => useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/me'), retry: false, staleTime: 60_000 })
-export const useOverview = () => useQuery({ queryKey: ['overview'], queryFn: () => api<Overview>('/overview') })
+export type RevenueRange = 'months' | 'years' | 'centuries'
+export const useOverview = (range: RevenueRange = 'months') =>
+  useQuery({ queryKey: ['overview', range], queryFn: () => api<Overview>(`/overview?range=${range}`) })
 
 export interface ContactsQuery {
   q?: string

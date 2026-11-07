@@ -83,8 +83,37 @@ workspace.get('/overview', async (c) => {
   startOfLast.setMonth(startOfLast.getMonth() - 1)
   const month = startOfMonth.toISOString().slice(0, 10)
   const lastMonth = startOfLast.toISOString().slice(0, 10)
-  const sixMonths = new Date(startOfMonth)
-  sixMonths.setMonth(sixMonths.getMonth() - 5)
+  const rangeParam = c.req.query('range')
+  const range = rangeParam === 'years' || rangeParam === 'centuries' ? rangeParam : 'months'
+  const year = startOfMonth.getUTCFullYear()
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const buckets: { key: string; label: string }[] = []
+  let revenueStart: string
+  let revenueGroup: string
+  if (range === 'years') {
+    const first = year - 5
+    revenueStart = `${first}-01-01`
+    revenueGroup = 'substr(close_date, 1, 4)'
+    for (let i = 0; i < 6; i++) buckets.push({ key: String(first + i), label: String(first + i) })
+  } else if (range === 'centuries') {
+    const current = Math.floor((year - 1) / 100) + 1
+    const first = current - 5
+    revenueStart = `${(first - 1) * 100 + 1}-01-01`
+    revenueGroup = 'CAST((CAST(substr(close_date, 1, 4) AS INTEGER) - 1) / 100 + 1 AS INTEGER)'
+    for (let i = 0; i < 6; i++) {
+      const century = first + i
+      const suffix = century % 100 >= 11 && century % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][century % 10] ?? 'th')
+      buckets.push({ key: String(century), label: `${century}${suffix}` })
+    }
+  } else {
+    const firstMonth = startOfMonth.getUTCMonth() - 5
+    revenueStart = new Date(Date.UTC(year, firstMonth, 1)).toISOString().slice(0, 10)
+    revenueGroup = 'substr(close_date, 1, 7)'
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(Date.UTC(year, firstMonth + i, 1))
+      buckets.push({ key: d.toISOString().slice(0, 7), label: monthNames[d.getUTCMonth()] ?? '' })
+    }
+  }
 
   const [pipeline, wonThis, wonLast, openDeals, newContacts, tasksDue, stages, revenue, activity, tasks] = await db.batch([
     db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage NOT IN ('won','lost')`).bind(owner),
@@ -96,27 +125,24 @@ workspace.get('/overview', async (c) => {
     db.prepare(`SELECT stage, COUNT(*) AS n, COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? GROUP BY stage`).bind(owner),
     db
       .prepare(
-        `SELECT substr(close_date, 1, 7) AS ym,
+        `SELECT ${revenueGroup} AS ym,
                 COALESCE(SUM(CASE WHEN stage = 'won' THEN value ELSE -value END),0) AS v
          FROM deals
          WHERE owner_sub = ? AND stage IN ('won','lost') AND close_date >= ? GROUP BY ym ORDER BY ym`,
       )
-      .bind(owner, sixMonths.toISOString().slice(0, 10)),
+      .bind(owner, revenueStart),
     db.prepare(`${ACTIVITY_SELECT} WHERE a.owner_sub = ? ORDER BY a.created_at DESC LIMIT 8`).bind(owner),
     db.prepare(`${TASK_SELECT} WHERE t.owner_sub = ? AND t.done_at IS NULL ORDER BY t.due_at IS NULL, t.due_at ASC LIMIT 6`).bind(owner),
   ])
 
-  const months: { label: string; value: number }[] = []
-  const byMonth = new Map((revenue.results as { ym: string; v: number }[]).map((r) => [r.ym, Number(r.v)]))
-  // Running total: a loss pulls the previous month's revenue down instead of
-  // drawing a separate negative month.
+  const revenueSeries: { label: string; value: number }[] = []
+  const byBucket = new Map((revenue.results as { ym: string | number; v: number }[]).map((r) => [String(r.ym), Number(r.v)]))
+  // Running total: a loss pulls the previous period's revenue down instead of
+  // drawing a separate negative bucket.
   let running = 0
-  for (let i = 0; i < 6; i++) {
-    const d = new Date(sixMonths)
-    d.setMonth(d.getMonth() + i)
-    const key = d.toISOString().slice(0, 7)
-    running += byMonth.get(key) ?? 0
-    months.push({ label: d.toLocaleString('en', { month: 'short' }), value: running })
+  for (const bucket of buckets) {
+    running += byBucket.get(bucket.key) ?? 0
+    revenueSeries.push({ label: bucket.label, value: running })
   }
 
   const stageRows = stages.results as { stage: DealStage; n: number; v: number }[]
@@ -129,7 +155,7 @@ workspace.get('/overview', async (c) => {
       newContacts: Number((newContacts.results[0] as { n: number }).n),
       tasksDue: Number((tasksDue.results[0] as { n: number }).n),
     },
-    revenueSeries: months,
+    revenueSeries,
     stageTotals: (['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'] as DealStage[]).map((stage) => {
       const row = stageRows.find((r) => r.stage === stage)
       return { stage, count: Number(row?.n ?? 0), value: Number(row?.v ?? 0) }
