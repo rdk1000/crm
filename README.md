@@ -5,6 +5,23 @@ drag-and-drop deal board, tasks, notes and file attachments. It runs on
 Freebuff Sites with Sign in with Freebuff, D1 for data and R2 for files, and
 every record is scoped to the signed-in user.
 
+## Download
+
+Ready-to-install desktop builds, straight from the latest release:
+
+| Platform | Download |
+| --- | --- |
+| macOS (Apple Silicon) | [Relay-macOS-arm64.dmg](https://github.com/rubende2013/crm/releases/latest/download/Relay-macOS-arm64.dmg) |
+| macOS (Intel) | [Relay-macOS-x64.dmg](https://github.com/rubende2013/crm/releases/latest/download/Relay-macOS-x64.dmg) |
+| Windows 10/11 | [Relay-Windows-x64.exe](https://github.com/rubende2013/crm/releases/latest/download/Relay-Windows-x64.exe) |
+| Linux (AppImage) | [Relay-Linux-x86_64.AppImage](https://github.com/rubende2013/crm/releases/latest/download/Relay-Linux-x86_64.AppImage) |
+| Linux (Debian/Ubuntu) | [Relay-Linux-amd64.deb](https://github.com/rubende2013/crm/releases/latest/download/Relay-Linux-amd64.deb) |
+
+The builds are unsigned (macOS: right-click → Open the first time, Windows:
+SmartScreen confirmation) and update themselves after the first install. The
+download code lives in [Settings](src/app/pages/Settings.tsx),
+[`desktop/`](desktop) and [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml).
+
 ## Run it
 
 ```sh
