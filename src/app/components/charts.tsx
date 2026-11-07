@@ -11,7 +11,8 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
   const [hover, setHover] = useState<number | null>(null)
   const w = 600
   const h = height
-  const padX = 8
+  // The series runs edge to edge; the card padding supplies the breathing room.
+  const padX = 0
   const padTop = 16
   const padBottom = 28
   const plotH = h - padTop - padBottom
@@ -32,7 +33,7 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
   const ticks = [0.25, 0.5, 0.75, 1]
   return (
     <div className={cx('relative', className)}>
-      <svg viewBox={`0 0 ${w} ${h}`} className="h-auto w-full" preserveAspectRatio="none" onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${w} ${h}`} className="h-auto w-full overflow-visible" preserveAspectRatio="none" onMouseLeave={() => setHover(null)}>
         <defs>
           <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.22" />
@@ -91,7 +92,7 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
       {hover !== null && (
         <div
           className="pointer-events-none absolute -top-1 -translate-x-1/2 rounded-tile bg-solid px-2.5 py-1.5 text-[12px] font-medium text-solid-fg shadow-pop"
-          style={{ left: `${(points[hover].x / w) * 100}%` }}
+          style={{ left: `${Math.min(94, Math.max(6, (points[hover].x / w) * 100))}%` }}
         >
           {moneyCompact(data[hover].value)}
         </div>
