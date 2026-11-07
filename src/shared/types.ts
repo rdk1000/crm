@@ -114,6 +114,7 @@ export interface Overview {
     tasksDue: number
   }
   revenueSeries: { label: string; value: number }[]
+  revenueYears: number[]
   stageTotals: { stage: DealStage; count: number; value: number }[]
   recentActivity: Activity[]
   upcomingTasks: Task[]

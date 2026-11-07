@@ -86,6 +86,9 @@ workspace.get('/overview', async (c) => {
   const rangeParam = c.req.query('range')
   const range = rangeParam === 'month' ? 'month' : 'year'
   const year = startOfMonth.getUTCFullYear()
+  const requestedYear = Number(c.req.query('year'))
+  const selectedYear =
+    range === 'year' && Number.isInteger(requestedYear) && requestedYear >= 1970 && requestedYear <= 2100 ? requestedYear : year
   const monthIndex = startOfMonth.getUTCMonth()
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const buckets: { key: string; label: string }[] = []
@@ -100,15 +103,15 @@ workspace.get('/overview', async (c) => {
       buckets.push({ key: new Date(Date.UTC(year, monthIndex, day)).toISOString().slice(0, 10), label: String(day) })
     }
   } else {
-    // All twelve months of the current year, including months without deals.
-    revenueStart = `${year}-01-01`
+    // All twelve months of the selected year, including months without deals.
+    revenueStart = `${selectedYear}-01-01`
     revenueGroup = 'substr(close_date, 1, 7)'
     for (let i = 0; i < 12; i++) {
-      buckets.push({ key: `${year}-${String(i + 1).padStart(2, '0')}`, label: monthNames[i] ?? '' })
+      buckets.push({ key: `${selectedYear}-${String(i + 1).padStart(2, '0')}`, label: monthNames[i] ?? '' })
     }
   }
 
-  const [pipeline, wonThis, wonLast, openDeals, newContacts, tasksDue, stages, revenue, activity, tasks] = await db.batch([
+  const [pipeline, wonThis, wonLast, openDeals, newContacts, tasksDue, stages, revenue, revenueYears, activity, tasks] = await db.batch([
     db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage NOT IN ('won','lost')`).bind(owner),
     db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage = 'won' AND close_date >= ?`).bind(owner, month),
     db.prepare(`SELECT COALESCE(SUM(value),0) AS v FROM deals WHERE owner_sub = ? AND stage = 'won' AND close_date >= ? AND close_date < ?`).bind(owner, lastMonth, month),
@@ -124,6 +127,14 @@ workspace.get('/overview', async (c) => {
          WHERE owner_sub = ? AND stage IN ('won','lost') AND close_date >= ? GROUP BY ym ORDER BY ym`,
       )
       .bind(owner, revenueStart),
+    db
+      .prepare(
+        `SELECT DISTINCT CAST(substr(close_date, 1, 4) AS INTEGER) AS y
+         FROM deals
+         WHERE owner_sub = ? AND stage IN ('won','lost') AND close_date IS NOT NULL
+         ORDER BY y`,
+      )
+      .bind(owner),
     db.prepare(`${ACTIVITY_SELECT} WHERE a.owner_sub = ? ORDER BY a.created_at DESC LIMIT 8`).bind(owner),
     db.prepare(`${TASK_SELECT} WHERE t.owner_sub = ? AND t.done_at IS NULL ORDER BY t.due_at IS NULL, t.due_at ASC LIMIT 6`).bind(owner),
   ])
@@ -137,6 +148,11 @@ workspace.get('/overview', async (c) => {
     running += byBucket.get(bucket.key) ?? 0
     revenueSeries.push({ label: bucket.label, value: running })
   }
+  // Offer every year that has won/lost deals, plus the current and next year.
+  const yearSet = new Set<number>((revenueYears.results as { y: number }[]).map((r) => Number(r.y)))
+  yearSet.add(year)
+  yearSet.add(year + 1)
+  const availableYears = [...yearSet].sort((a, b) => a - b)
 
   const stageRows = stages.results as { stage: DealStage; n: number; v: number }[]
   const body: Overview = {
@@ -149,6 +165,7 @@ workspace.get('/overview', async (c) => {
       tasksDue: Number((tasksDue.results[0] as { n: number }).n),
     },
     revenueSeries,
+    revenueYears: availableYears,
     stageTotals: (['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'] as DealStage[]).map((stage) => {
       const row = stageRows.find((r) => r.stage === stage)
       return { stage, count: Number(row?.n ?? 0), value: Number(row?.v ?? 0) }

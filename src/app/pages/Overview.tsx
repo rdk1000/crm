@@ -29,10 +29,13 @@ export const activityIcon: Record<Activity['kind'], ReactNode> = {
 }
 
 export function Overview() {
+  const currentYear = new Date().getFullYear()
   const [range, setRange] = useState<RevenueRange>('year')
-  const { data, isLoading } = useOverview(range)
+  const [year, setYear] = useState(currentYear)
+  const { data, isLoading } = useOverview(range, year)
   const { data: me } = useMe()
-  const rangeLabel = range === 'month' ? 'this month' : 'this year'
+  const periodLabel = range === 'month' ? 'this month' : String(year)
+  const yearOptions = [...new Set([...(data?.revenueYears ?? []), year])].sort((a, b) => a - b)
   const toast = useToast()
   const toggle = useApiMutation((input: { id: string; done: boolean }) => api(`/tasks/${input.id}`, { method: 'PATCH', json: { done: input.done } }), ['overview', 'tasks'])
   const seed = useApiMutation(() => api('/workspace/reset', { method: 'POST' }), ['overview', 'contacts', 'companies', 'deals', 'tasks', 'me'], {
@@ -119,26 +122,42 @@ export function Overview() {
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-[14px] font-semibold">Revenue</h2>
-            <div className="grid h-8 grid-cols-2 items-center rounded-control border border-line-strong bg-surface p-0.5">
-              {(
-                [
-                  ['month', 'Month'],
-                  ['year', 'Year'],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  aria-pressed={range === key}
-                  onClick={() => setRange(key)}
-                  className={cx(
-                    'h-7 rounded-[8px] px-2 text-[11.5px] font-medium transition-colors',
-                    range === key ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg',
-                  )}
+            <div className="flex items-center gap-1.5">
+              {range === 'year' && (
+                <select
+                  aria-label="Year"
+                  value={year}
+                  onChange={(event) => setYear(Number(event.target.value))}
+                  className="h-8 cursor-pointer rounded-control border border-line-strong bg-surface px-1.5 text-[12px] font-medium text-fg focus-visible:border-fg focus-visible:outline-none"
                 >
-                  {label}
-                </button>
-              ))}
+                  {yearOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <div className="grid h-8 grid-cols-2 items-center rounded-control border border-line-strong bg-surface p-0.5">
+                {(
+                  [
+                    ['month', 'Month'],
+                    ['year', 'Year'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={range === key}
+                    onClick={() => setRange(key)}
+                    className={cx(
+                      'h-7 rounded-[8px] px-2 text-[11.5px] font-medium transition-colors',
+                      range === key ? 'bg-surface-2 text-fg' : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <p className="mt-1 text-[12.5px] text-faint">Won minus lost, running total</p>
@@ -150,7 +169,7 @@ export function Overview() {
                 <div className="flex aspect-[600/220] w-full flex-col items-center justify-center gap-2 rounded-tile border border-dashed border-line px-4 text-center">
                   <Handshake className="size-5 text-faint" />
                   <p className="text-[13.5px] font-medium">No revenue yet</p>
-                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won or Lost show up here for {rangeLabel}.</p>
+                  <p className="max-w-[260px] text-[12.5px] leading-relaxed text-muted">Deals you mark Won or Lost show up here for {periodLabel}.</p>
                   <Link to="/deals" className="text-[12.5px] font-medium text-accent hover:underline">
                     Open the deal board
                   </Link>
