@@ -117,7 +117,7 @@ export function Overview() {
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="text-[14px] font-semibold">Revenue</h2>
-            <span className="text-[12.5px] text-faint">Won minus lost, last 6 months</span>
+            <span className="text-[12.5px] text-faint">Won minus lost, running total</span>
           </div>
           <div className="mt-4">
             {data ? (

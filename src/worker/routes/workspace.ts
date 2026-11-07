@@ -108,11 +108,15 @@ workspace.get('/overview', async (c) => {
 
   const months: { label: string; value: number }[] = []
   const byMonth = new Map((revenue.results as { ym: string; v: number }[]).map((r) => [r.ym, Number(r.v)]))
+  // Running total: a loss pulls the previous month's revenue down instead of
+  // drawing a separate negative month.
+  let running = 0
   for (let i = 0; i < 6; i++) {
     const d = new Date(sixMonths)
     d.setMonth(d.getMonth() + i)
     const key = d.toISOString().slice(0, 7)
-    months.push({ label: d.toLocaleString('en', { month: 'short' }), value: byMonth.get(key) ?? 0 })
+    running += byMonth.get(key) ?? 0
+    months.push({ label: d.toLocaleString('en', { month: 'short' }), value: running })
   }
 
   const stageRows = stages.results as { stage: DealStage; n: number; v: number }[]
