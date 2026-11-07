@@ -1,7 +1,7 @@
 {
   "name": "relay-desktop",
   "productName": "Relay",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Desktop shell for the Relay CRM",
   "homepage": "https://github.com/rubende2013/crm",
   "license": "MIT",
@@ -28,7 +28,10 @@
       "output": "release",
       "buildResources": "build"
     },
-    "files": ["main.js", "package.json"],
+    "files": [
+      "main.js",
+      "package.json"
+    ],
     "publish": [
       {
         "provider": "github",
@@ -41,14 +44,33 @@
       "category": "public.app-category.business",
       "icon": "build/icon.icns",
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] },
-        { "target": "zip", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "artifactName": "Relay-macOS-${arch}.${ext}"
     },
     "win": {
       "icon": "build/icon.ico",
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "Relay-Windows-${arch}.${ext}"
     },
     "nsis": {
@@ -60,8 +82,18 @@
       "category": "Office",
       "icon": "build/icon.png",
       "target": [
-        { "target": "AppImage", "arch": ["x64"] },
-        { "target": "deb", "arch": ["x64"] }
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "artifactName": "Relay-Linux-${arch}.${ext}"
     }
