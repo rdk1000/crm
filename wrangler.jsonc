@@ -9,7 +9,7 @@
     "run_worker_first": true
   },
   // Local development bindings. Freebuff Sites attaches the real DB and FILES
-  // bindings on deploy (sites_add_storage), and injects the FREEBUFF_* vars.
+  // bindings on deploy (sites_add_storage).
   "d1_databases": [
     { "binding": "DB", "database_name": "relay", "database_id": "00000000-0000-0000-0000-000000000000" }
   ],

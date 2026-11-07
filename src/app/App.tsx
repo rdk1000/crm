@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 
 import { Shell } from './components/Shell'
 import { Spinner, ToastProvider } from './components/ui'
-import { ApiError, useMe } from './lib/api'
+import { useMe } from './lib/api'
 import { Companies } from './pages/Companies'
 import { CompanyDetail } from './pages/CompanyDetail'
 import { ContactDetail } from './pages/ContactDetail'
@@ -11,7 +11,7 @@ import { Contacts } from './pages/Contacts'
 import { Deals } from './pages/Deals'
 import { Overview } from './pages/Overview'
 import { Settings } from './pages/Settings'
-import { SetupNeeded, SignIn } from './pages/SignIn'
+import { SetupNeeded } from './pages/SetupNeeded'
 import { Tasks } from './pages/Tasks'
 
 const client = new QueryClient({
@@ -26,10 +26,6 @@ function Gate() {
         <Spinner />
       </div>
     )
-  }
-  if (me.error instanceof ApiError) {
-    if (me.error.status === 401) return <SignIn />
-    if (me.error.status === 503) return <SetupNeeded message={me.error.message} />
   }
   if (me.error) return <SetupNeeded message={me.error.message} />
   return (

@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 
-import { authMode, privateJson } from '../auth'
+import { privateJson } from '../auth'
 import { ACTIVITY_SELECT, TASK_SELECT, mapActivity, mapTask, now } from '../db'
 import type { AppContext } from '../env'
 import { clearWorkspace, seedWorkspace } from '../seed'
@@ -12,7 +12,7 @@ async function ensureWorkspace(db: D1Database, owner: string, name: string) {
   const row = await db.prepare(`SELECT name, seeded_at FROM workspaces WHERE owner_sub = ?`).bind(owner).first<{ name: string; seeded_at: number | null }>()
   // A new workspace starts empty; Settings can load sample data on request.
   if (row) return row
-  await db.prepare(`INSERT INTO workspaces (owner_sub, name, created_at) VALUES (?, ?, ?)`).bind(owner, name, now()).run()
+  await db.prepare(`INSERT OR IGNORE INTO workspaces (owner_sub, name, created_at) VALUES (?, ?, ?)`).bind(owner, name, now()).run()
   return { name, seeded_at: null }
 }
 
@@ -46,7 +46,6 @@ workspace.get('/me', async (c) => {
     capabilities: {
       database: true,
       files: Boolean(c.env.FILES),
-      auth: authMode(c.env, c.req.raw) === 'freebuff' ? 'freebuff' : 'development',
     },
   }
   return privateJson(c, body)

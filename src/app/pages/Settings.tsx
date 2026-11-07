@@ -76,25 +76,15 @@ export function Settings() {
       <PageHeader title="Settings" />
 
       <section className="mt-8">
-        <h2 className="text-[14px] font-semibold">Account</h2>
+        <h2 className="text-[14px] font-semibold">Access</h2>
         <div className="mt-3 flex items-center gap-4 rounded-card border border-line p-4">
-          <Avatar name={me.user.name ?? me.user.email ?? 'You'} hue={210} src={me.user.picture} size={48} />
+          <Avatar name={me.workspace.name} hue={210} size={48} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-medium">{me.user.name ?? 'Signed in'}</p>
-            {me.user.email && <p className="truncate text-[13px] text-muted">{me.user.email}</p>}
+            <p className="truncate text-[15px] font-medium">{me.workspace.name}</p>
+            <p className="text-[13px] text-muted">No account needed. Everyone with this link shares this workspace.</p>
           </div>
-          {me.capabilities.auth === 'freebuff' ? (
-            <form method="post" action="/auth/freebuff/signout">
-              <input type="hidden" name="returnTo" value="/" />
-              <Button type="submit">Sign out</Button>
-            </form>
-          ) : (
-            <Badge tone="warning">Development user</Badge>
-          )}
+          <Badge tone="neutral">Open</Badge>
         </div>
-        {me.capabilities.auth === 'development' && (
-          <p className="mt-2 text-[12.5px] text-faint">Sign in with Freebuff is not configured yet. Run the app with FREEBUFF_CLIENT_ID set to use real accounts.</p>
-        )}
       </section>
 
       <section className="mt-8">
@@ -121,7 +111,6 @@ export function Settings() {
           {[
             ['Database', me.capabilities.database, 'D1 via the DB binding'],
             ['File storage', me.capabilities.files, 'R2 via the FILES binding'],
-            ['Sign in with Freebuff', me.capabilities.auth === 'freebuff', 'FREEBUFF_CLIENT_ID'],
           ].map(([label, ok, detail]) => (
             <li key={label as string} className="flex h-13 items-center gap-3 px-4">
               <span className="min-w-0 flex-1">
@@ -161,7 +150,7 @@ export function Settings() {
       <section className="mt-8">
         <h2 className="text-[14px] font-semibold">Desktop app</h2>
         <p className="mt-1 text-[12.5px] text-muted">
-          Relay in its own window. The desktop shell loads this workspace, so sign-in and data stay on the server.
+          Relay in its own window. The desktop shell loads this workspace, so the database and files stay on the server.
         </p>
         <div className="mt-3 divide-y divide-line rounded-card border border-line">
           {DESKTOP_DOWNLOADS.map((row) => (

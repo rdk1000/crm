@@ -38,19 +38,16 @@ bun run dev        # http://localhost:5173 with local D1 and R2 (Miniflare)
 bun run build      # dist/client (assets) + dist/relay/index.js (Worker)
 ```
 
-On localhost without a `FREEBUFF_CLIENT_ID`, the app signs you in as a local
-development user so everything works before auth is provisioned. A new
-workspace starts empty; Settings can load sample data or clear everything.
+There are no accounts: Relay runs as one shared workspace per deployment. A new
+database starts empty; Settings can load sample data or clear everything.
+Because there is no sign-in, anyone who can reach a deployment can read and
+change its data — put it behind your own access control if that matters.
 
-## Connect it to Freebuff
+## Deploy it
 
 1. `sites_create`, then `sites_add_storage` for D1 named `DB` and R2 named `FILES`.
-2. `sites_enable_auth` (pass `http://localhost:5173` as the local origin while
-   developing). Copy the development variables into `.dev.vars` (see
-   `.dev.vars.example`) to use real accounts locally.
-3. `bun run build`, then `sites_deploy` with `deploy.json`. The deploy injects
-   `FREEBUFF_CLIENT_ID`, `FREEBUFF_ISSUER` and `APP_ORIGIN`, and attaches the
-   `DB` and `FILES` bindings.
+2. `bun run build`, then `sites_deploy` with `deploy.json`. The deploy attaches
+   the `DB` and `FILES` bindings and injects `APP_ORIGIN`.
 
 If a binding is missing the app says so instead of failing: Settings shows what
 is connected, and file uploads are hidden until R2 is attached.
@@ -73,7 +70,7 @@ is connected, and file uploads are hidden until R2 is attached.
 ## Desktop app
 
 The desktop shell in `desktop/` is a small Electron wrapper around the deployed
-app, so the database, files and sign-in stay on the server. Builds are produced
+app, so the database and files stay on the server. Builds are produced
 by `.github/workflows/desktop.yml` on every `v*` tag and attached to a GitHub
 release:
 

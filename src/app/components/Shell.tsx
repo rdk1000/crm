@@ -94,7 +94,7 @@ export function Shell() {
           <NavLink to="/settings" className="mt-1 flex items-center gap-2.5 rounded-control px-2 py-2 transition-colors hover:bg-raised/60">
             <Avatar name={me.user.name ?? me.user.email ?? 'You'} hue={210} src={me.user.picture} size={28} />
             <span className="min-w-0">
-              <span className="block truncate text-[13px] font-medium">{me.user.name ?? 'Signed in'}</span>
+              <span className="block truncate text-[13px] font-medium">{me.user.name ?? me.workspace.name}</span>
               {me.user.email && <span className="block truncate text-[11.5px] text-faint">{me.user.email}</span>}
             </span>
           </NavLink>
