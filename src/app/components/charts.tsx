@@ -53,7 +53,9 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
         ))}
         <line x1={padX} x2={w - padX} y1={zeroY} y2={zeroY} stroke="var(--color-line-strong)" />
         <motion.path d={area} fill={`url(#${gradientId})`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 }} />
-        <motion.path
+        {/* No pathLength animation: a stroke that is still drawing (or stuck
+            part-way after a data change) looks like a line that stops early. */}
+        <path
           d={line}
           fill="none"
           stroke="var(--color-accent)"
@@ -61,9 +63,6 @@ export function AreaChart({ data, height = 220, className }: { data: { label: st
           strokeLinecap="round"
           strokeLinejoin="round"
           vectorEffect="non-scaling-stroke"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.1, ease: 'easeInOut' }}
         />
         {points.map((p, i) => (
           <g key={i}>
