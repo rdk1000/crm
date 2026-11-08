@@ -145,6 +145,7 @@ export function Deals() {
           onOpen={(id) => setParams({ deal: id })}
           onAdd={(stage) => setCreating(stage)}
           onDelete={setDeleting}
+          onDropDelete={(deal) => remove.mutate(deal.id)}
         />
       ) : (
         <ListView deals={items} onOpen={(id) => setParams({ deal: id })} onDelete={setDeleting} />
@@ -174,6 +175,7 @@ function Board({
   onOpen,
   onAdd,
   onDelete,
+  onDropDelete,
 }: {
   deals: Deal[]
   hiddenStages: DealStage[]
@@ -182,6 +184,7 @@ function Board({
   onOpen: (id: string) => void
   onAdd: (stage: DealStage) => void
   onDelete: (deal: Deal) => void
+  onDropDelete: (deal: Deal) => void
 }) {
   const client = useQueryClient()
   const [local, setLocal] = useState(deals)
@@ -238,7 +241,9 @@ function Board({
     if (String(over.id) === DELETE_ZONE_ID) {
       setLocal(deals)
       const dragged = byId.get(String(active.id))
-      if (dragged) onDelete(dragged)
+      // Dropping on the delete zone removes immediately; the card and drawer
+      // delete buttons still open the confirmation.
+      if (dragged) onDropDelete(dragged)
       return
     }
     const dragged = byId.get(String(active.id))
