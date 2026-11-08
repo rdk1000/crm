@@ -3,9 +3,11 @@ import {
   DragOverlay,
   PointerSensor,
   closestCorners,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -35,6 +37,15 @@ const stageDot: Record<DealStage, string> = {
 }
 
 const HIDDEN_STAGES_KEY = 'relay.hidden-stages'
+const DELETE_ZONE_ID = 'deal-delete-zone'
+
+// Only treat the delete zone as a target when the pointer is actually inside
+// it; nearest-corner detection could otherwise delete a card dropped beside it.
+const collisionDetection: CollisionDetection = (args) => {
+  const hit = pointerWithin(args).find((collision) => collision.id === DELETE_ZONE_ID)
+  if (hit) return [hit]
+  return closestCorners(args).filter((collision) => collision.id !== DELETE_ZONE_ID)
+}
 
 function readHiddenStages(): DealStage[] {
   if (typeof window === 'undefined') return []
@@ -202,6 +213,7 @@ function Board({
   function onDragOver(e: DragOverEvent) {
     const { active, over } = e
     if (!over) return
+    if (String(over.id) === DELETE_ZONE_ID) return
     const from = findStage(String(active.id))
     const to = findStage(String(over.id))
     if (!from || !to || from === to) return
@@ -219,7 +231,16 @@ function Board({
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e
     setActiveId(null)
-    if (!over) return
+    if (!over) {
+      setLocal(deals)
+      return
+    }
+    if (String(over.id) === DELETE_ZONE_ID) {
+      setLocal(deals)
+      const dragged = byId.get(String(active.id))
+      if (dragged) onDelete(dragged)
+      return
+    }
     const dragged = byId.get(String(active.id))
     if (!dragged) return
     const stage = findStage(String(over.id)) ?? dragged.stage
@@ -246,7 +267,7 @@ function Board({
   const active = activeId ? byId.get(activeId) : undefined
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => (setActiveId(null), setLocal(deals))}>
+    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => (setActiveId(null), setLocal(deals))}>
       {hiddenStages.length > 0 && (
         <div className="mx-auto mt-4 flex w-full max-w-[1400px] justify-end px-5 sm:px-8">
           <button type="button" onClick={onShowAll} className="text-[12.5px] font-medium text-accent hover:underline">
@@ -263,10 +284,11 @@ function Board({
             </button>
           </div>
         ) : (
-          <div className="mx-auto grid h-full min-w-[1180px] max-w-[1400px] gap-3" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
+          <div className="mx-auto grid h-full min-w-[1320px] max-w-[1400px] gap-3" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr)) 180px` }}>
             {columns.map((col) => (
               <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} onDelete={onDelete} onHide={() => onHide(col.key)} />
             ))}
+            <DeleteZone />
           </div>
         )}
       </div>
@@ -321,6 +343,34 @@ function Column({ stage, label, deals, onOpen, onAdd, onDelete, onHide }: { stag
           <Plus className="size-3.5" />
           Add
         </button>
+      </div>
+    </section>
+  )
+}
+
+function DeleteZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: DELETE_ZONE_ID })
+  return (
+    <section className="flex min-h-0 flex-col">
+      <header className="flex h-9 items-center gap-2 px-1">
+        <span className="round size-2 bg-danger/70" />
+        <h2 className="truncate text-[13px] font-semibold">Delete</h2>
+        <Trash2 className="ml-auto size-3.5 text-danger/70" aria-hidden />
+      </header>
+      <div
+        ref={setNodeRef}
+        data-testid="deal-delete-zone"
+        aria-label="Drop a deal here to delete it"
+        className={cx(
+          'flex min-h-[160px] flex-1 flex-col items-center justify-center gap-1.5 rounded-card border border-dashed p-3 text-center transition-colors',
+          isOver ? 'border-danger/60 bg-danger-soft/60 text-danger' : 'border-danger/25 bg-bg/70 text-faint',
+        )}
+      >
+        <span className={cx('mb-1 grid size-9 place-items-center rounded-full transition-colors', isOver ? 'bg-danger/15' : 'bg-surface-2')}>
+          <Trash2 className="size-4" />
+        </span>
+        <p className="text-[12.5px] font-medium">{isOver ? 'Drop to delete' : 'Drag a card here'}</p>
+        <p className="text-[11.5px]">to delete it</p>
       </div>
     </section>
   )
