@@ -144,7 +144,6 @@ export function Deals() {
           onShowAll={showAllStages}
           onOpen={(id) => setParams({ deal: id })}
           onAdd={(stage) => setCreating(stage)}
-          onDelete={setDeleting}
           onDropDelete={(deal) => remove.mutate(deal.id)}
         />
       ) : (
@@ -174,7 +173,6 @@ function Board({
   onShowAll,
   onOpen,
   onAdd,
-  onDelete,
   onDropDelete,
 }: {
   deals: Deal[]
@@ -183,7 +181,6 @@ function Board({
   onShowAll: () => void
   onOpen: (id: string) => void
   onAdd: (stage: DealStage) => void
-  onDelete: (deal: Deal) => void
   onDropDelete: (deal: Deal) => void
 }) {
   const client = useQueryClient()
@@ -241,8 +238,8 @@ function Board({
     if (String(over.id) === DELETE_ZONE_ID) {
       setLocal(deals)
       const dragged = byId.get(String(active.id))
-      // Dropping on the delete zone removes immediately; the card and drawer
-      // delete buttons still open the confirmation.
+      // Dropping on the delete zone removes immediately; the list and drawer
+      // delete buttons still ask for confirmation.
       if (dragged) onDropDelete(dragged)
       return
     }
@@ -291,7 +288,7 @@ function Board({
         ) : (
           <div className="mx-auto grid h-full min-w-[1320px] max-w-[1400px] gap-3" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr)) 180px` }}>
             {columns.map((col) => (
-              <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} onDelete={onDelete} onHide={() => onHide(col.key)} />
+              <Column key={col.key} stage={col.key} label={col.label} deals={col.deals} onOpen={onOpen} onAdd={() => onAdd(col.key)} onHide={() => onHide(col.key)} />
             ))}
             <DeleteZone />
           </div>
@@ -311,7 +308,7 @@ function positionBetween(after: number | undefined, before: number | undefined):
   return (after + before) / 2
 }
 
-function Column({ stage, label, deals, onOpen, onAdd, onDelete, onHide }: { stage: DealStage; label: string; deals: Deal[]; onOpen: (id: string) => void; onAdd: () => void; onDelete: (deal: Deal) => void; onHide: () => void }) {
+function Column({ stage, label, deals, onOpen, onAdd, onHide }: { stage: DealStage; label: string; deals: Deal[]; onOpen: (id: string) => void; onAdd: () => void; onHide: () => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage })
   const total = deals.reduce((s, d) => s + d.value, 0)
   return (
@@ -337,7 +334,7 @@ function Column({ stage, label, deals, onOpen, onAdd, onDelete, onHide }: { stag
       >
         <SortableContext items={deals.map((d) => d.id)} strategy={verticalListSortingStrategy}>
           {deals.map((d) => (
-            <SortableCard key={d.id} deal={d} onOpen={() => onOpen(d.id)} onDelete={() => onDelete(d)} />
+            <SortableCard key={d.id} deal={d} onOpen={() => onOpen(d.id)} />
           ))}
         </SortableContext>
         <button
@@ -381,16 +378,16 @@ function DeleteZone() {
   )
 }
 
-function SortableCard({ deal, onOpen, onDelete }: { deal: Deal; onOpen: () => void; onDelete: () => void }) {
+function SortableCard({ deal, onOpen }: { deal: Deal; onOpen: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: deal.id })
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} {...attributes} {...listeners} className={cx(isDragging && 'opacity-30')}>
-      <DealCard deal={deal} onOpen={onOpen} onDelete={onDelete} />
+      <DealCard deal={deal} onOpen={onOpen} />
     </div>
   )
 }
 
-function DealCard({ deal, onOpen, onDelete, overlay }: { deal: Deal; onOpen?: () => void; onDelete?: () => void; overlay?: boolean }) {
+function DealCard({ deal, onOpen, overlay }: { deal: Deal; onOpen?: () => void; overlay?: boolean }) {
   return (
     <article
       onClick={onOpen}
@@ -399,21 +396,7 @@ function DealCard({ deal, onOpen, onDelete, overlay }: { deal: Deal; onOpen?: ()
         overlay && 'rotate-[1.5deg] cursor-grabbing shadow-pop',
       )}
     >
-      {onDelete && !overlay && (
-        <button
-          type="button"
-          aria-label={`Delete ${deal.title}`}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation()
-            onDelete()
-          }}
-          className="absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-[7px] text-faint transition-colors hover:bg-surface-2 hover:text-danger focus-visible:bg-surface-2 focus-visible:text-danger focus-visible:outline-none"
-        >
-          <Trash2 className="size-3.5" />
-        </button>
-      )}
-      <p className="line-clamp-2 pr-7 text-[13.5px] font-medium leading-snug">{deal.title}</p>
+      <p className="line-clamp-2 text-[13.5px] font-medium leading-snug">{deal.title}</p>
       {deal.companyName && <p className="mt-0.5 truncate text-[12.5px] text-muted">{deal.companyName}</p>}
       <div className="mt-3 flex items-center justify-between">
         <span className="text-[13px] font-semibold tabular-nums">{money(deal.value)}</span>
